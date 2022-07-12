@@ -1,0 +1,55 @@
+name: trivy-container-scan
+
+on:
+  workflow_call:
+
+    inputs:
+      working_directory:
+        type: string
+        required: true
+        default: './src'
+      image_name:
+        type: string
+        required: true
+      dockerfile_path:
+        type: string
+        required: true
+      tag:
+        type: string
+        required: true
+
+jobs:
+  container-vulnerability-scan:
+    name: Container Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Application Repository
+        uses: actions/checkout@v3  
+
+      - name: Compile and build Docker image for Trivy
+        working-directory: ${{ inputs.working_directory }}
+        run: | 
+          docker build . -f ${{ inputs.dockerfile_path}} -t trivy-image/${{ inputs.image_name }}:${{ inputs.tag }}
+
+      - name: Run Trivy container vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'trivy-image/${{ inputs.image_name }}:${{ inputs.tag }}'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          security-checks: 'vuln'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Generate Trivy JSON report
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'trivy-image/${{ inputs.image_name }}:${{ inputs.tag }}'
+          format: 'json'
+          output: '${{ inputs.image_name }}-results.json'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          security-checks: 'vuln'
+          severity: 'CRITICAL,HIGH'
