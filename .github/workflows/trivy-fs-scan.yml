@@ -1,0 +1,44 @@
+name: trivy-fs-scan
+
+on:
+  workflow_call:
+
+    inputs:
+      application_name:
+        type: string
+        required: true
+      skipp_file:
+        type: string
+        required: true
+
+jobs:
+  fs-scanning:
+    name: Repo File System Scanning 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Application Repository
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner filesystem mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          hide-progress: true
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+          security-checks: 'secret,vuln'
+          timeout: '2m0s'
+          skip-files: '${{ inputs.skipp_file }}'
+
+      - name: Generate Trivy JSON report
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          hide-progress: true
+          format: 'json'
+          output: '${{ inputs.application }}-results.json'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
