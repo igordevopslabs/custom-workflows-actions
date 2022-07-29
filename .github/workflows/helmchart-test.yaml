@@ -1,0 +1,78 @@
+name: helmchart-tests
+
+on:
+  workflow_call:
+
+    inputs:
+      application_name:
+        type: string
+        required: true
+      helmfile_dir:
+        type: string
+        required: true
+        default: 'deploy/helmfile.yaml'
+      env:
+        type: string
+        required: true
+        default: 'labs'
+
+jobs:
+  container-vulnerability-scan:
+    name: helmchart-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Application Repository
+        uses: actions/checkout@v3  
+
+      - name: Install Helm
+        shell: bash
+        run: |  
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+      
+      - name: Install Helm Plugins
+        shell: bash
+        run: |
+          helm plugin install https://github.com/databus23/helm-diff --version v3.1.1
+          helm plugin install https://github.com/aslafy-z/helm-git --version 0.10.0
+      
+      - name: Install Helmfile
+        shell: bash
+        run: |  
+          wget https://github.com/roboll/helmfile/releases/download/v0.143.5/helmfile_linux_386
+          chmod +x helmfile_linux_386
+          sudo mv helmfile_linux_386 /usr/local/bin/helmfile
+
+      - name: Setup Kind Cluster
+        uses: helm/kind-action@v1.2.0
+
+      - name: K8S deps - ServiceMonitor
+        run: kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+
+      - name: K8S deps - PrometheusRules
+        run: kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+
+      - name: List the k8s deps 
+        run: kubectl get crds
+  
+      - name: Cache Helmfile
+        uses: hiberbee/github-action-helm@1.12.0
+        with:
+          helmfile: cache cleanup
+          environment: ${{ inputs.env }}
+          helmfile-config: ${{ inputs.helmfile_dir }}   
+
+      - name: Apply Helmfile
+        uses: hiberbee/github-action-helm@1.12.0
+        with:
+          helmfile: --selector role=test apply
+          environment: ${{ inputs.env }}
+          helmfile-config: ${{ inputs.helmfile_dir }}
+
+      - name: check if ${{ inputs.application_name }} pods are running
+        run: |
+          kubectl get pods -n ${{ inputs.application_name }} || true
+          kubectl get services -n ${{ inputs.application_name }} || true 
+
+
