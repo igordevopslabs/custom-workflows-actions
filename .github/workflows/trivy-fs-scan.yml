@@ -4,9 +4,6 @@ on:
   workflow_call:
 
     inputs:
-      application_name:
-        type: string
-        required: true
       skipp_file:
         type: string
         required: true
@@ -38,7 +35,7 @@ jobs:
           scan-type: 'fs'
           hide-progress: true
           format: 'json'
-          output: '${{ inputs.application }}-results.json'
+          output: '${{ github.event.repository.name }}-results.json'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
