@@ -55,23 +55,6 @@ jobs:
         with:
           token: ${{ secrets.PERSON_GB_TOKEN }}
 
-      - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v1
-        with:
-          tflint_version: v0.37.0
-
-      - uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.bot_ssh_key }}
-
-      - name: Configure git for private modules
-        run: git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
-
-      - name: tflint
-        run: |
-          tflint --init -c $(git rev-parse --show-toplevel)/.tflint.hcl
-          tflint -c $(git rev-parse --show-toplevel)/.tflint.hcl .
-
       - name: Run Trivy vulnerability scanner in IaC mode
         uses: aquasecurity/trivy-action@master
         with:
