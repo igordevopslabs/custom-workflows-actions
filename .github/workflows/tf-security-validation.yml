@@ -1,12 +1,17 @@
 name: terraform-validation
-on:
-  pull_request:
-    paths:
-      - "**.tf"
 
-concurrency:
-  group: pull-request-${{ github.head_ref }}
-  cancel-in-progress: true
+on:
+  workflow_call:
+
+    inputs:
+      exit-code:
+        type: string
+        required: false
+        default: '0'
+      severity:
+        type: string
+        required: false
+        default: 'CRITICAL,HIGH,MEDIUM'
 
 jobs:
   modules-matrix:
@@ -37,7 +42,7 @@ jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
-    needs: [modules-matrix, secret-scanning]
+    needs: modules-matrix
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.modules-matrix.outputs.matrix)}}
@@ -70,7 +75,7 @@ jobs:
   security-scan:
     name: security-scan
     runs-on: ubuntu-latest
-    needs: [modules-matrix, secret-scanning, lint]
+    needs: [modules-matrix, lint]
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.modules-matrix.outputs.matrix)}}
@@ -88,9 +93,9 @@ jobs:
           scan-type: 'config'
           hide-progress: false
           format: 'table'
-          exit-code: '0'
+          exit-code: '${{ inputs.exit-code }}'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: '${{ inputs.severity }}'
 
       - name: Generate Trivy JSON report
         uses: aquasecurity/trivy-action@master
@@ -100,6 +105,6 @@ jobs:
           hide-progress: false
           format: 'json'
           output: '${{ github.event.repository.name }}-results.json'
-          exit-code: '0'
+          exit-code: '${{ inputs.exit-code }}'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: '${{ inputs.severity }}'
