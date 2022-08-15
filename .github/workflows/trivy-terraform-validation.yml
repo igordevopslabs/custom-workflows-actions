@@ -35,7 +35,7 @@ jobs:
           script: |
             const path = require('path');
             const modified_files = ${{ steps.files.outputs.added_modified }}
-            const modules = Array.from(new Set(modified_files.filter((f) => path.extname(f) == '.tf').map((f) || path.extname(f) == '.hcl').map((f)=> path.dirname(f))))
+            const modules = Array.from(new Set(modified_files.filter((f) => path.extname(f) == '.tf').map((f) => path.dirname(f)))) || []
             console.log(`modified modules ${modules}`)
             const json = JSON.stringify({"module": modules})
             console.log(`::set-output name=matrix::${json}`)
