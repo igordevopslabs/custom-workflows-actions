@@ -13,10 +13,6 @@ on:
         required: false
         default: 'CRITICAL,HIGH,MEDIUM'
 
-concurrency:
-  group: pull-request-${{ github.head_ref }}
-  cancel-in-progress: true
-
 jobs:
   modules-matrix:
     name: set-matrix
