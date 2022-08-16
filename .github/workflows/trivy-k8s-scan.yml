@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |  
           wget https://github.com/FairwindsOps/polaris/releases/download/7.0.1/polaris_linux_amd64.tar.gz
-          tar -xvf dpkg polaris_linux_amd64.tar.gz
+          tar -xvf polaris_linux_amd64.tar.gz
           sudo mv polaris_linux_amd64 /usr/local/bin/polaris
           
 
