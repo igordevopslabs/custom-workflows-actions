@@ -41,7 +41,7 @@ jobs:
           chmod +x helmfile_linux_386
           sudo mv helmfile_linux_386 /usr/local/bin/helmfile
 
-      - name: Install Trivy
+      - name: Install Polaris 
         shell: bash
         run: |  
           wget https://github.com/FairwindsOps/polaris/releases/download/7.0.1/polaris_linux_amd64.tar.gz
@@ -49,7 +49,7 @@ jobs:
           sudo mv polaris /usr/local/bin/polaris
           
 
-      - name: Generate helm template
+      - name: Generate k8s-security summary report
         shell: bash
         run: |  
           helmfile -f ${{inputs.helmfile_dir}} -e ${{inputs.env}} template >> deploy.yaml && polaris audit --audit-path deploy.yaml --format=pretty --only-show-failed-tests --set-exit-code-below-score 50
