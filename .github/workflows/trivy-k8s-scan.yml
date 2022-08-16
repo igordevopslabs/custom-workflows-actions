@@ -1,4 +1,4 @@
-name: helmchart-security-scan
+name: k8s-security-config-scan
 
 on:
   workflow_call:
@@ -12,10 +12,15 @@ on:
         type: string
         required: true
         default: 'labs'
+      scan_score:
+        type: number
+        description: 'A score to set exit-code 1 and break the pipeline execution'
+        required: false
+        default: 50
 
 jobs:
-  helm-security-scan:
-    name: helm-security-scan
+  k8s-security-config-scan:
+    name: k8s-security-config-scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Application Repository
@@ -52,4 +57,4 @@ jobs:
       - name: Generate k8s-security summary report
         shell: bash
         run: |  
-          helmfile -f ${{inputs.helmfile_dir}} -e ${{inputs.env}} template >> deploy.yaml && polaris audit --audit-path deploy.yaml --format=pretty --only-show-failed-tests --set-exit-code-below-score 50
+          helmfile -f ${{inputs.helmfile_dir}} -e ${{inputs.env}} template >> deploy.yaml && polaris audit --audit-path deploy.yaml --format=pretty --only-show-failed-tests --set-exit-code-below-score ${{inputs.scan_score}}
