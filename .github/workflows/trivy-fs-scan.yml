@@ -52,4 +52,3 @@ jobs:
         run: |
           cat ${{ github.event.repository.name }}-results.json
           echo "Trivy Summary: ${{ steps.trivyreport.outputs.output }}" >> $GITHUB_STEP_SUMMARY
-
