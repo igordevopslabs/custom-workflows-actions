@@ -50,6 +50,6 @@ jobs:
 
       - name: Get the output from the trivy step
         run: |
-          ls
+          cat ${{ github.event.repository.name }}-results.json
           echo "Trivy Summary: ${{ steps.trivyreport.outputs.output }}" >> $GITHUB_STEP_SUMMARY
 
