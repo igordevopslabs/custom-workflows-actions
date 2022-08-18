@@ -42,7 +42,9 @@ jobs:
         run: |
           RESULT=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].MisconfSummary.Failures')
           if [[ "$RESULT" != 0 ]]; then
-            echo "### Ops, parece que temos alguns  pontos a serem corrigidos. Dê uma olhada no step Trivy Iac Scanning. :rotating_light:" >> $GITHUB_STEP_SUMMARY
+            echo "#### Ops, parece que temos alguns  pontos a serem corrigidos  :rotating_light:" >> $GITHUB_STEP_SUMMARY
+            ERRORS=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].Misconfigurations[].Title')
+            echo $ERRORS >> $GITHUB_STEP_SUMMARY
           else
             echo "### Show! nenhum problema encontrado nos arquivos de declaração da infraestrutura :green_heart:" >> $GITHUB_STEP_SUMMARY
           fi
