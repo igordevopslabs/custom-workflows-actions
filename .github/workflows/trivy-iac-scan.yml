@@ -43,8 +43,6 @@ jobs:
           RESULT=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].MisconfSummary.Failures')
           if [[ "$RESULT" != 0 ]]; then
             echo "### Ops, temos algo para ser corrigido :rotationg_light:" >> $GITHUB_STEP_SUMMARY
-            exit 0
           else
             echo "### Show! nenhum problema encontrado no seu Dockerfile :green_heart:" $GITHUB_STEP_SUMMARY
-            exit 0
           fi
