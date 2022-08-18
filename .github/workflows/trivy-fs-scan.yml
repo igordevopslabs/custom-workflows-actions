@@ -23,6 +23,7 @@ jobs:
         run: sudo rm -f /var/lib/man-db/auto-update
 
       - name: Run Trivy vulnerability scanner filesystem mode
+        id: trivyfs
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -36,6 +37,7 @@ jobs:
           skip-files: '${{ inputs.skipp_file }}'
 
       - name: Generate Trivy JSON report
+        id: trivyreport
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -45,3 +47,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
+
+      - name: Get the output from the trivy step
+        run: |
+          echo "Trivy Summary: ${{ steps.trivyreport.outputs.output }}" >> $GITHUB_STEP_SUMMARY
+
