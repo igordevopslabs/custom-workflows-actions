@@ -17,7 +17,7 @@ jobs:
       - name: Disable man-db update
         run: sudo rm -f /var/lib/man-db/auto-update
 
-      - name: Run Trivy vulnerability scanner in IaC mode
+      - name: Trivy Iac Scanning
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
@@ -42,7 +42,7 @@ jobs:
         run: |
           RESULT=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].MisconfSummary.Failures')
           if [[ "$RESULT" != 0 ]]; then
-            echo "### Ops, temos algo para ser corrigido :rotating_light:" >> $GITHUB_STEP_SUMMARY
+            echo "### Ops, parece que temos alguns  pontos a serem corrigidos. Dê uma olhada no step Trivy Iac Scanning. :rotating_light:" >> $GITHUB_STEP_SUMMARY
           else
-            echo "### Show! nenhum problema encontrado no seu Dockerfile :green_heart:" >> $GITHUB_STEP_SUMMARY
+            echo "### Show! nenhum problema encontrado nos arquivos de declaração da infraestrutura :green_heart:" >> $GITHUB_STEP_SUMMARY
           fi
