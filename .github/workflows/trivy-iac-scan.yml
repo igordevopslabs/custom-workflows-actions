@@ -37,3 +37,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
+
+      - name: Get the output from the trivy step
+        run: |
+          cat ${{ github.event.repository.name }}-results.json | jq -r '.Metadata.ImageConfig.config'
+          echo "Trivy Summary: ${{ steps.trivyreport.outputs.output }}" >> $GITHUB_STEP_SUMMARY
