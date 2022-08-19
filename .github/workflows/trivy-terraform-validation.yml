@@ -79,7 +79,7 @@ jobs:
 
       - name: Generate github actions summary
         run: |
-          cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq '. | index(".Results") '
+          cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json
           FILE=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq '. | index(".Results") ')
           if [[ "$FILE" != "null" ]]; then
             RESULT=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq  '.Results[].MisconfSummary.Failures')
