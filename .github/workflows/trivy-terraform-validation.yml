@@ -79,6 +79,7 @@ jobs:
 
       - name: Generate github actions summary
         run: |
+          ls -lha
           FILE=$(cat ${{ github.event.repository.name }}-results.json | jq '. | index(".Results") ')
           if [[ "$FILE" != "null" ]]; then
             RESULT=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].MisconfSummary.Failures')
