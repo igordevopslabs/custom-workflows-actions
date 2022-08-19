@@ -85,7 +85,7 @@ jobs:
             if [[ ! "$RESULT" -eq 0 ]]; then
               echo "#### Ops, parece que temos alguns  pontos a serem corrigidos  :rotating_light:" >> $GITHUB_STEP_SUMMARY
               ERRORS=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq  '.Results[].Misconfigurations[].Title')
-              printf $ERRORS\n >> $GITHUB_STEP_SUMMARY
+              echo $ERRORS\n >> $GITHUB_STEP_SUMMARY
             else
               echo "#### Show! nenhum problema encontrado nos arquivos de declaração da infraestrutura :green_heart:" >> $GITHUB_STEP_SUMMARY
             fi
