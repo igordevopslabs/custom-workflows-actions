@@ -40,6 +40,39 @@ jobs:
             const json = JSON.stringify({"module": modules})
             console.log(`::set-output name=matrix::${json}`)
 
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    needs: [modules-matrix]
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.modules-matrix.outputs.matrix)}}
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PERSON_GB_TOKEN }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v1
+        with:
+          tflint_version: v0.37.0
+
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.PERSON_GB_SSH_KEY }}
+
+      - name: Configure git for private modules
+        run: git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+
+      - name: tflint
+        run: |
+          tflint --init -c $(git rev-parse --show-toplevel)/.tflint.hcl
+          tflint -c $(git rev-parse --show-toplevel)/.tflint.hcl .
+
   security-scan:
     name: security-scan
     runs-on: ubuntu-latest
