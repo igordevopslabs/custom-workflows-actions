@@ -72,7 +72,7 @@ jobs:
           scan-type: 'config'
           hide-progress: false
           format: 'json'
-          output: '${{ github.event.repository.name }}-results.json'
+          output: '${{ github.event.repository.name }}-${{ matrix.module }}-results.json'
           exit-code: '${{ inputs.exit-code }}'
           ignore-unfixed: true
           severity: '${{ inputs.severity }}'
@@ -80,12 +80,12 @@ jobs:
       - name: Generate github actions summary
         run: |
           ls -lha ../
-          FILE=$(cat ${{ github.event.repository.name }}-results.json | jq '. | index(".Results") ')
+          FILE=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq '. | index(".Results") ')
           if [[ "$FILE" != "null" ]]; then
-            RESULT=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].MisconfSummary.Failures')
+            RESULT=$(cat ${{ ../github.event.repository.name }}-${{ matrix.module }}-results.json | jq  '.Results[].MisconfSummary.Failures')
             if [[ ! "$RESULT" -eq 0 ]]; then
               echo "#### Ops, parece que temos alguns  pontos a serem corrigidos  :rotating_light:" >> $GITHUB_STEP_SUMMARY
-              ERRORS=$(cat ${{ github.event.repository.name }}-results.json | jq  '.Results[].Misconfigurations[].Title')
+              ERRORS=$(cat ${{ ../github.event.repository.name }}-${{ matrix.module }}-results.json | jq  '.Results[].Misconfigurations[].Title')
               echo $ERRORS >> $GITHUB_STEP_SUMMARY
             else
               echo "#### Show! nenhum problema encontrado nos arquivos de declaração da infraestrutura :green_heart:" >> $GITHUB_STEP_SUMMARY
