@@ -61,13 +61,6 @@ jobs:
         with:
           tflint_version: v0.37.0
 
-      - uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.PERSON_GB_SSH_KEY }}
-
-      - name: Configure git for private modules
-        run: git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
-
       - name: tflint
         run: |
           tflint --init -c $(git rev-parse --show-toplevel)/.tflint.hcl
