@@ -65,3 +65,26 @@ jobs:
 
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag $DOCKER_USER/$REPO_NAME:${{ inputs.tag }}
+
+      - name: Run Trivy container vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '$DOCKER_USER/$REPO_NAME:${{ inputs.tag }}'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          security-checks: 'vuln'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Generate Trivy JSON report
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '$DOCKER_USER/$REPO_NAME:${{ inputs.tag }}'
+          format: 'json'
+          output: '${{ inputs.image_name }}-results.json'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          security-checks: 'vuln'
+          severity: 'CRITICAL,HIGH'
