@@ -65,12 +65,12 @@ jobs:
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}
+        run: docker build . --file Dockerfile --tag ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
 
       - name: Run Trivy container vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}'
+          image-ref: '${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}'
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
@@ -81,9 +81,9 @@ jobs:
       - name: Generate Trivy JSON report
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}'
+          image-ref: '${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}'
           format: 'json'
-          output: '${{ inputs.image_name }}-results.json'
+          output: '${{ inputs.app_name }}-results.json'
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
