@@ -11,6 +11,10 @@ on:
         description: 'Application/Project name'
         required: true
         type: string
+      app_path:
+        description: 'Application/Project path go files'
+        required: true
+        type: string
 
 jobs:
   image-scan:
