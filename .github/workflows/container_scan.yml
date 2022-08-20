@@ -36,7 +36,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Build
-        run: CGO_ENABLED=1 GO111MODULES=on -ldflags="-s -w" -o ${{ inputs.app_name }}-bin ${{ inputs.app_path }}
+        run: CGO_ENABLED=1 GO111MODULES=on go build -ldflags="-s -w" -o ${{ inputs.app_name }}-bin ${{ inputs.app_path }}
 
       - name: Move go binary
         run: mkdir binaries && mv ${{ inputs.app_name }}-bin binaries && ls -lha binaries
