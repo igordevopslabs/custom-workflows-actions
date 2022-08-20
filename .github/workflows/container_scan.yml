@@ -76,7 +76,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           security-checks: 'vuln'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
       - name: Generate Trivy JSON report
         uses: aquasecurity/trivy-action@master
@@ -88,4 +88,4 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           security-checks: 'vuln'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
