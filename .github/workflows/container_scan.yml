@@ -37,7 +37,7 @@ jobs:
 
       - name: Build
 				env:
-					CGO_ENABLED: 1
+					CGO_ENABLED: '1'
           GO111MODULES: 'on'
         run: -ldflags="-s -w" -o ${{ inputs.app_name }}-bin ${{ inputs.app_path }}
 
