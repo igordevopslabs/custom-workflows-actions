@@ -102,17 +102,11 @@ jobs:
 
       - name: Generate github actions summary
         run: |
-          FILE=$(cat ${{ inputs.app_name }}-results.json | jq '.Results')
-          if [[ "$FILE" != "null" ]]; then
-            cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities'
-            RESULT=$(cat ${{ inputs.app_name }}-results.json | jq '.Results[].Vulnerabilities[]')
-            if [[ ! "$RESULT" != "null" ]]; then
-              echo "#### Ops! Looks like we have some points to be fixed in ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :rotating_light:" >> $GITHUB_STEP_SUMMARY
-              ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities[].Title')
-              printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "#### Excellent! we have no vulnerability for ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :green_heart:" >> $GITHUB_STEP_SUMMARY
-            fi
+          VULN=$(cat ${{ inputs.app_name }}-results.json | jq '.Results[].Vulnerabilities')
+          if [[ "$VULN" != "null" ]]; then
+            echo "#### Ops! Looks like we have some points to be fixed in ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :rotating_light:" >> $GITHUB_STEP_SUMMARY
+            ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities[].Title')
+            printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
           else
-            echo "#### No files were detected that are likely to have infrastructure security issues." >> $GITHUB_STEP_SUMMARY
+            echo "#### Excellent! we have no vulnerability for ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :green_heart:" >> $GITHUB_STEP_SUMMARY
           fi
