@@ -50,7 +50,7 @@ jobs:
       - name: Create Temp Dockerfile
         run: |
           cat >Dockerfile <<EOL
-          FROM ubuntu:20.04
+          FROM ubuntu:18.04
           
           RUN apt-get update -y \
           && DEBIAN_FRONTEND=noninteractive apt-get install locales tzdata openssl ca-certificates -y \
