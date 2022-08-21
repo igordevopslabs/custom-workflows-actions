@@ -11,6 +11,16 @@ on:
         description: 'Application/Project path go files'
         required: true
         type: string
+      exit_code:
+        description: 'Acceptable values are 0 or 1. If set to 0, the pipeline will not break'
+        required: false
+        type: string
+        default: '0'
+      severity:
+        description: 'The severity used to scan. The values can be: LOW, MEDIUM, HIGH or CRITICAL. You can use comma to pass more than one value'
+        required: false
+        type: string
+        default: 'MEDIUM,HIGH,CRITICAL'
 
 jobs:
   image-scan:
@@ -67,37 +77,37 @@ jobs:
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
 
-      - name: Run Trivy container vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Container Vuln Scan
+        uses: aquasecurity/trivy-action@v0.7.1
         with:
           image-ref: '${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}'
           format: 'table'
-          exit-code: '0'
+          exit-code: '${{ inputs.exit_code }}'
           ignore-unfixed: true
           vuln-type: 'os,library'
           security-checks: 'vuln'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          severity: '${{ inputs.severity }}'
 
       - name: Generate Trivy JSON report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.7.1
         with:
           image-ref: '${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}'
           format: 'json'
           output: '${{ inputs.app_name }}-results.json'
-          exit-code: '0'
+          exit-code: '${{ inputs.exit_code }}'
           ignore-unfixed: true
           vuln-type: 'os,library'
           security-checks: 'vuln'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          severity: '${{ inputs.severity }}'
 
       - name: Generate github actions summary
         run: |
           FILE=$(cat ${{ inputs.app_name }}-results.json | jq '.Results')
           if [[ "$FILE" != "null" ]]; then
-            RESULT=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].MisconfSummary.Failures')
-            if [[ ! "$RESULT" -eq 0 ]]; then
+            RESULT=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities')
+            if [[ ! "$RESULT" != "null" ]]; then
               echo "#### Ops! Looks like we have some points to be fixed here :rotating_light:" >> $GITHUB_STEP_SUMMARY
-              ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Misconfigurations[].Title')
+              ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities[].Title')
               printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
             else
               echo "#### Excellent! we have no security issues in the infrastructure files :green_heart:" >> $GITHUB_STEP_SUMMARY
