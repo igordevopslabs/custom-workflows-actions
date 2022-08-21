@@ -98,7 +98,7 @@ jobs:
             if [[ ! "$RESULT" -eq 0 ]]; then
               echo "#### Ops! Looks like we have some points to be fixed here :rotating_light:" >> $GITHUB_STEP_SUMMARY
               ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Misconfigurations[].Title')
-              echo $ERRORS >> $GITHUB_STEP_SUMMARY
+              printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
             else
               echo "#### Excellent! we have no security issues in the infrastructure files :green_heart:" >> $GITHUB_STEP_SUMMARY
             fi
