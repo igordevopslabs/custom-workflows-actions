@@ -100,13 +100,31 @@ jobs:
           security-checks: 'vuln'
           severity: '${{ inputs.severity }}'
 
-      - name: Generate github actions summary
+      #- name: Generate github actions summary
+        #run: |
+          #VULN=$(cat ${{ inputs.app_name }}-results.json | jq '.Results[].Vulnerabilities')
+          #if [[ "$VULN" != "null" ]]; then
+            #echo "#### Ops! Looks like we have some points to be fixed in ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :rotating_light:" >> $GITHUB_STEP_SUMMARY
+            #ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities[].VulnerabilityID')
+            #printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
+          #else
+            #echo "#### Excellent! we have no vulnerability for ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :green_heart:" >> $GITHUB_STEP_SUMMARY
+          #fi
+
+  comment:
+    if: contains(github.event.comment.body, 'special string')
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add comment to PR
+        env:
+          URL: ${{ ${{ github.event.pull_request.comments_url }} }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          VULN=$(cat ${{ inputs.app_name }}-results.json | jq '.Results[].Vulnerabilities')
-          if [[ "$VULN" != "null" ]]; then
-            echo "#### Ops! Looks like we have some points to be fixed in ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :rotating_light:" >> $GITHUB_STEP_SUMMARY
-            ERRORS=$(cat ${{ inputs.app_name }}-results.json | jq  '.Results[].Vulnerabilities[].VulnerabilityID')
-            printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "#### Excellent! we have no vulnerability for ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }} image :green_heart:" >> $GITHUB_STEP_SUMMARY
-          fi
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": "blah blah" }'
