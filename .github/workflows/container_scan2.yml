@@ -67,7 +67,7 @@ jobs:
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
 
-      - uses: lazy-actions/gitrivy@v3
+        name: Scan for vulnerabilities
+        uses: crazy-max/ghaction-container-scan@v1
         with:
-          token: ${{ secrets.GH_TOKEN }}
           image: ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
