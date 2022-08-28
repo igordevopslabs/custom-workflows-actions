@@ -1,0 +1,80 @@
+name: Container Image CI
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        description: 'Application/Project name'
+        required: true
+        type: string
+      app_path:
+        description: 'Application/Project path go files'
+        required: true
+        type: string
+
+jobs:
+  image-scan:
+    name: Build Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Extract go version from go.mod
+        id: extract
+        run: sed -En 's/^go[[:space:]]+([[:digit:].]+)$/GO_VERSION=\1/p' go.mod >> $GITHUB_ENV
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build
+        run: CGO_ENABLED=1 GO111MODULES=on go build -ldflags="-s -w" -o ${{ inputs.app_name }}-bin ${{ inputs.app_path }}
+
+      - name: Move go binary
+        run: mkdir binaries && mv ${{ inputs.app_name }}-bin binaries && ls -lha binaries
+
+      - name: Create Temp Dockerfile
+        run: |
+          cat >Dockerfile <<EOL
+          FROM ubuntu:18.04
+          
+          RUN apt-get update -y \
+          && DEBIAN_FRONTEND=noninteractive apt-get install locales tzdata openssl ca-certificates -y \
+          && /usr/sbin/update-ca-certificates \
+          && locale-gen en_US.UTF-8 pt_BR.UTF-8
+          
+          ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 DEBIAN_FRONTEND=noninteractive
+          
+          # rootless
+          RUN useradd --create-home --uid 1000 gopher
+          WORKDIR /home/gopher
+          USER 1000
+          
+          COPY ./binaries ./
+
+          CMD ["./${{ inputs.app_name }}-bin"]
+          
+          EOL
+
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
+
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v3
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+      
+      - name: Vilicus Scan
+        uses: edersonbrilhante/vilicus-github-action@main
+        with:
+          image: ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
