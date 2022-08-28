@@ -112,7 +112,7 @@ jobs:
           #fi
 
   comment:
-    if: contains(github.event.comment.body, 'special string')
+    #if: contains(github.event.comment.body, 'special string')
 
     runs-on: ubuntu-latest
 
