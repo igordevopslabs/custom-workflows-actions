@@ -70,3 +70,5 @@ jobs:
       - uses: crazy-max/ghaction-container-scan@v1
         with:
           image: ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          annotations: true
