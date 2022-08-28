@@ -11,6 +11,10 @@ on:
         description: 'Application/Project path go files'
         required: true
         type: string
+      severity_threshold:
+        description: 'Te treshold severid to break pipeline execution'
+        required: false
+        type: string
 
 jobs:
   image-scan:
@@ -72,3 +76,4 @@ jobs:
           image: ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
           severity: 'MEDIUM,HIGH,CRITICAL'
           annotations: true
+          severity_threshold: ${{ severity_threshold }}
