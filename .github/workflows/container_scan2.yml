@@ -67,14 +67,7 @@ jobs:
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
 
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@v3
+      - uses: lazy-actions/gitrivy@v3
         with:
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-      
-      - name: Vilicus Scan
-        uses: edersonbrilhante/vilicus-github-action@main
-        with:
+          token: ${{ secrets.GH_TOKEN }}
           image: ${{ inputs.app_name }}:${{ steps.vars.outputs.sha_short }}
