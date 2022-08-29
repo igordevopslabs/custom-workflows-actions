@@ -69,7 +69,7 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
             https://api.github.com/repos/$REPO/issues/$PR_NUMBER/comments \
-            -d '{"body":"# Job Summary\n'$SUMMARY_URL'\n}'
+            -d '{"body":"# Job Summary\n'$SUMMARY_URL'\n"}'
 
       - name: Check helmfile existence
         id: check_files
