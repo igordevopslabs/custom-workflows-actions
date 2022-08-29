@@ -54,36 +54,25 @@ jobs:
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          trivy config --severity MEDIUM,CRITICAL,HIGH -f json ${{ inputs.working_directory}} | tee $TEMP_FILE
+          trivy config --severity MEDIUM,CRITICAL,HIGH ${{ inputs.working_directory}} | tee $TEMP_FILE
           echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
         continue-on-error: true
 
-      - name: Add comment to PR
-        env:
-          URL: ${{ github.event.pull_request.comments_url }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          curl \
-            -X POST \
-            $URL \
-            -H "Content-Type: application/json" \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            --data '{ "body": ${{ steps.config_scan.outputs.stdout }} }'
-
-      - name: Update Pull Request
-        uses: actions/github-script@v5
-        env:
-          RESULT: ${{ steps.config_scan.outputs.stdout }}
-          WORKING_DIR: ${{ inputs.working_directory }}
-          EVENT_AUTHOR: ${{ github.actor }}
-          EVENT_NAME: ${{ github.event_name }}
-          RUN_ID: ${{ github.run_id }}
-          PLAN_LOGS_BASE64: ${{ steps.config_scan.outputs.logs }}
+      - name: Auto Comment
+        uses: bubkoo/auto-comment@v1
         with:
-          result-encoding: string
-          script: |
-            const script = require('./.github/scripts/pipeline_scripts.js') 
-            await script.prComment({github, context, core})
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pullRequestOpened: >
+            
+            Thank you for raising your pull request.
+            
+            This is the code delta:
+            
+            ```
+            
+            ${{ steps.config_scan.outputs.logs }}
+            
+            ```
 
       - name: Check helmfile existence
         id: check_files
