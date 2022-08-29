@@ -21,20 +21,21 @@ jobs:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
 
+      - name: Install Trivy bin
+        if: steps.check_files.outputs.files_exists == 'true' 
+        shell: bash
+        run: |  
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+          tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/trivy
+
       - name: Disable initramfs update
         run: sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
 
       - name: Disable man-db update
         run: sudo rm -f /var/lib/man-db/auto-update
 
-      - name: Check Dockerfile existence
-        id: dockerfile
-        uses: andstor/file-existence-action@v1.1.0
-        with:
-          files: "*/Dockerfile"
-
       - name: Trivy Iac Scanning
-        if: steps.dockerfile.outputs.files_exists == 'true'
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
@@ -44,16 +45,26 @@ jobs:
           ignore-unfixed: true
           severity: 'MEDIUM,CRITICAL,HIGH'
 
-      - name: Generate Trivy JSON report
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          hide-progress: false
-          format: 'json'
-          output: '${{ github.event.repository.name }}-results.json'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'MEDIUM,CRITICAL,HIGH'
+      - name: "Trivy Output"
+        id: config_scan
+        run: |
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          trivy config --severity MEDIUM,CRITICAL,HIGH | tee $TEMP_FILE
+          echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+        continue-on-error: true
+
+      - name: Add comment to PR
+        env:
+          URL: ${{ github.event.pull_request.comments_url }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          curl \
+            -X POST \
+            $URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            --data '{ "body": ${{ steps.config_scan.outputs.stdout }} }'
 
       - name: Check helmfile existence
         id: check_files
@@ -97,3 +108,4 @@ jobs:
         shell: bash
         run: |  
           helmfile -f deploy/helmfile.yaml -e ${{inputs.env}} template >> ${{inputs.env}}-deploy.yaml && polaris audit --audit-path ${{inputs.env}}-deploy.yaml --format=pretty --only-show-failed-tests --set-exit-code-below-score ${{inputs.scan_score}}
+
