@@ -27,7 +27,14 @@ jobs:
       - name: Disable man-db update
         run: sudo rm -f /var/lib/man-db/auto-update
 
+      - name: Check Dockerfile existence
+        id: dockerfile
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "**Dockerfile"
+
       - name: Trivy Iac Scanning
+        if: steps.dockerfile.outputs.files_exists == 'true'
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
