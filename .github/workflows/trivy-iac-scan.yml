@@ -55,24 +55,14 @@ jobs:
           set -o pipefail
           TEMP_FILE=$(mktemp)
           trivy config --severity MEDIUM,CRITICAL,HIGH ${{ inputs.working_directory}} | tee $TEMP_FILE
-          echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+          echo "::set-output name=result::$(cat $TEMP_FILE)"
         continue-on-error: true
 
-      - name: Auto Comment
-        uses: bubkoo/auto-comment@v1
+      - name: Auto Comment 
+        uses: github-actions-up-and-running/pr-comment@v1.0.0
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          pullRequestOpened: >
-            
-            Thank you for raising your pull request.
-            
-            This is the code delta:
-            
-            ```
-            
-            ${{ steps.config_scan.outputs.logs }}
-            
-            ```
+          repo-token: ${{ secrets.GH_TOKEN }}
+          message: ${{ steps.config_scan.outputs.result }}
 
       - name: Check helmfile existence
         id: check_files
