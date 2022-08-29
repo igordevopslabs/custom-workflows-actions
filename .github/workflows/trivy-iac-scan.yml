@@ -7,6 +7,11 @@ on:
         type: string
         required: false
         default: production
+      scan_score:
+        type: number
+        description: 'A score to set exit-code 1 and break the pipeline execution'
+        required: false
+        default: 50
 
 jobs:
   iac-scanning:
@@ -72,16 +77,16 @@ jobs:
           chmod +x helmfile_linux_386
           sudo mv helmfile_linux_386 /usr/local/bin/helmfile
 
-      - name: Install Trivy
+      - name: Install Polaris
         if: steps.check_files.outputs.files_exists == 'true' 
         shell: bash
         run: |  
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
-          tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
-          sudo mv trivy /usr/local/bin/trivy
+          wget https://github.com/FairwindsOps/polaris/releases/download/7.0.1/polaris_linux_amd64.tar.gz
+          tar -xvf polaris_linux_amd64.tar.gz
+          sudo mv polaris /usr/local/bin/polaris
 
       - name: Generate summary security report for helmchart
         if: steps.check_files.outputs.files_exists == 'true'
         shell: bash
         run: |  
-          helmfile -f deploy/helmfile.yaml -e ${{inputs.env}} template >> ${{inputs.env}}-deploy.yaml && trivy config --severity MEDIUM,HIGH,CRITICAL ${{inputs.env}}-deploy.yaml
+          helmfile -f deploy/helmfile.yaml -e ${{inputs.env}} template >> ${{inputs.env}}-deploy.yaml && polaris audit --audit-path ${{inputs.env}}-deploy.yaml --format=pretty --only-show-failed-tests --set-exit-code-below-score ${{inputs.scan_score}}
