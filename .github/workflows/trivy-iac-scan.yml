@@ -49,20 +49,27 @@ jobs:
           ignore-unfixed: true
           severity: 'MEDIUM,CRITICAL,HIGH'
 
-      - name: "Trivy Output"
-        id: config_scan
-        run: |
-          set -o pipefail
-          TEMP_FILE=$(mktemp)
-          trivy config --severity MEDIUM,CRITICAL,HIGH ${{ inputs.working_directory}} | tee $TEMP_FILE
-          echo "::set-output name=result::$(cat $TEMP_FILE)"
-        continue-on-error: true
+      #- name: "Trivy Output"
+        #id: config_scan
+        #run: |
+          #set -o pipefail
+          #TEMP_FILE=$(mktemp)
+          #trivy config --severity MEDIUM,CRITICAL,HIGH ${{ inputs.working_directory}} | tee $TEMP_FILE
+          #echo "::set-output name=result::$(cat $TEMP_FILE)"
+        #continue-on-error: true
 
-      - name: Auto Comment 
-        uses: github-actions-up-and-running/pr-comment@v1.0.0
-        with:
-          repo-token: ${{ secrets.GH_TOKEN }}
-          message: ${{ steps.config_scan.outputs.result }}
+      - name: Post Trivy coverage comments
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          SUMMARY_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/$REPO/issues/$PR_NUMBER/comments \
+            -d '{"body":"# Job Summary\n'$SUMMARY_URL'\n}'
 
       - name: Check helmfile existence
         id: check_files
