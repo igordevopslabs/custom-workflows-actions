@@ -2,6 +2,11 @@ name: trivy-iac-scan
 
 on:
   workflow_call:
+    inputs:
+      env:
+        type: string
+        required: false
+        default: production
 
 jobs:
   iac-scanning:
@@ -17,6 +22,13 @@ jobs:
       - name: Disable man-db update
         run: sudo rm -f /var/lib/man-db/auto-update
 
+      - name: Install Trivy 
+        shell: bash
+        run: |  
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+          tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/trivy
+
       - name: Trivy Iac Scanning
         uses: aquasecurity/trivy-action@master
         with:
@@ -25,7 +37,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'MEDIUM,CRITICAL,HIGH'
 
       - name: Generate Trivy JSON report
         uses: aquasecurity/trivy-action@master
@@ -36,4 +48,16 @@ jobs:
           output: '${{ github.event.repository.name }}-results.json'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'MEDIUM,CRITICAL,HIGH'
+
+      - name: Check helmfile existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "helmfile.yaml, helmfile.yml"
+
+      - name: Generate summary security report for helmchart
+        if: steps.check_files.outputs.files_exists == 'true'
+        shell: bash
+        run: |  
+          helmfile -f deploy/helmfile.yaml -e ${{inputs.env}} template >> ${{inputs.env}}-deploy.yaml && trivy config --severity MEDIUM,HIGH,CRITICAL ${{inputs.env}}-deploy.yaml
