@@ -12,6 +12,11 @@ on:
         description: 'A score to set exit-code 1 and break the pipeline execution'
         required: false
         default: 50
+      working_directory:
+        type: string
+        description: 'A default locate where trivy will run'
+        required: false
+        default: /github/workspace/
 
 jobs:
   iac-scanning:
@@ -49,7 +54,7 @@ jobs:
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          trivy config --severity MEDIUM,CRITICAL,HIGH | tee $TEMP_FILE
+          trivy config --severity MEDIUM,CRITICAL,HIGH ${{inputs.working_directory}}| tee $TEMP_FILE
           echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
         continue-on-error: true
 
