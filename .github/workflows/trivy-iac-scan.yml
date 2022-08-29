@@ -31,7 +31,7 @@ jobs:
         id: dockerfile
         uses: andstor/file-existence-action@v1.1.0
         with:
-          files: "*Dockerfile"
+          files: "*/Dockerfile"
 
       - name: Trivy Iac Scanning
         if: steps.dockerfile.outputs.files_exists == 'true'
