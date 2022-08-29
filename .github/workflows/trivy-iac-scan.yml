@@ -54,7 +54,7 @@ jobs:
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          trivy config --severity MEDIUM,CRITICAL,HIGH ${{inputs.working_directory}}| tee $TEMP_FILE
+          trivy config --severity MEDIUM,CRITICAL,HIGH . | tee $TEMP_FILE
           echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
         continue-on-error: true
 
