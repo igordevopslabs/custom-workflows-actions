@@ -21,8 +21,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: ${{ github.workspace }}
-        args: >
-          -Dsonar.organization=${{ github.repository_owner }}
-          -Dsonar.projectKey=${{ inputs.sonnar_project_key }}
+
