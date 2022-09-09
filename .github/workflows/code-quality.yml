@@ -52,7 +52,7 @@ jobs:
 
     - name: lendo report
       run: |
-        cat ${{ github.event.repository.name }}-report.json
+        pwd && cat ${{ github.event.repository.name }}-report.json
       continue-on-error: true
 
     - name: SonarCloud Scan
