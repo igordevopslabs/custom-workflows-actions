@@ -65,4 +65,4 @@ jobs:
         args: >
           -Dsonar.organization=${{ github.repository_owner }}
           -Dsonar.projectKey=${{ inputs.sonnar_project_key }}
-          -Dsonar.externalIssuesReportPaths=${{ github.workspace }}/${{ github.event.repository.name }}-report.json
+          -Dsonar.externalIssuesReportPaths=${{ github.event.repository.name }}-report.json
