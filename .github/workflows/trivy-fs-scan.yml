@@ -21,6 +21,7 @@ on:
         required: false
         default: 'CRITICAL,HIGH'
 
+
 jobs:
   fs-scanning:
     name: Repo external deps Scanning 
@@ -61,6 +62,7 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
           tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/trivy
+
       - name: Generate results to Pull Request comments
         id: trivy-scan
         run: |
@@ -85,10 +87,13 @@ jobs:
               
               const prOutput = `
             <details><summary><strong>Trivy external deps scan results</strong></summary>
+
             \`\`\`bash\n
             ${trivyResultFormatted}
             \`\`\`
+
             </details>`;
+
               github.rest.issues.createComment({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
@@ -97,4 +102,4 @@ jobs:
               }); 
             }
             await prCommentTrivy({github, context, core})
-        continue-on-error: true
+        continue-on-error: true    

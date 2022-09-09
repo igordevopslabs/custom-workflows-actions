@@ -45,6 +45,7 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
           tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/trivy
+
       - name: Generate results to Pull Request comments
         id: trivy-scan
         run: |
@@ -69,10 +70,13 @@ jobs:
               
               const prOutput = `
             <details><summary><strong>Trivy Container Image Scan results</strong></summary>
+
             \`\`\`bash\n
             ${trivyResultFormatted}
             \`\`\`
+
             </details>`;
+
               github.rest.issues.createComment({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,

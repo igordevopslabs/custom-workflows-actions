@@ -39,6 +39,7 @@ jobs:
             console.log(`modified modules ${modules}`)
             const json = JSON.stringify({"module": modules})
             console.log(`::set-output name=matrix::${json}`)
+
   security-scan:
     name: security-scan
     runs-on: ubuntu-latest
@@ -84,10 +85,13 @@ jobs:
               
               const prOutput = `
             <details><summary><strong>Trivy Infra files scan results ${{ matrix.module }} </strong></summary>
+
             \`\`\`bash\n
             ${trivyResultFormatted}
             \`\`\`
+
             </details>`;
+
               github.rest.issues.createComment({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
