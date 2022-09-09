@@ -19,6 +19,10 @@ on:
         type: string
         required: false
         default: '.'
+      sonnar_template_path:
+        type: string
+        required: false
+        default: "@template/sonarqube.tpl"
 
 jobs:
   sonarcloud:
@@ -38,7 +42,7 @@ jobs:
     - name: Generate results to Pull Request comments
       id: trivy-scan
       run: |
-        trivy fs --ignore-unfixed --vuln-type  os,library --security-checks vuln --exit-code ${{ inputs.exit_code }} --severity ${{ inputs.severity }} --no-progress --format template --template "template/sonarqube.tpl" -o ${{ github.event.repository.name }}-report.json ${{ inputs.working_directory }}
+        trivy fs --ignore-unfixed --vuln-type  os,library --security-checks vuln --exit-code ${{ inputs.exit_code }} --severity ${{ inputs.severity }} --no-progress --format template --template ${{inputs.sonnar_template_path}} -o ${{ github.event.repository.name }}-report.json ${{ inputs.working_directory }}
       continue-on-error: true
 
     - name: debug
