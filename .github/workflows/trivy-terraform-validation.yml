@@ -39,7 +39,6 @@ jobs:
             console.log(`modified modules ${modules}`)
             const json = JSON.stringify({"module": modules})
             console.log(`::set-output name=matrix::${json}`)
-
   security-scan:
     name: security-scan
     runs-on: ubuntu-latest
@@ -53,42 +52,48 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Run trivy scan for Terraform files
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-ref: ${{ matrix.module }}
-          scan-type: 'config'
-          hide-progress: false
-          format: 'table'
-          exit-code: '${{ inputs.exit-code }}'
-          ignore-unfixed: true
-          severity: '${{ inputs.severity }}'
-
-      - name: Generate trivy JSON report
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-ref: ${{ matrix.module }}
-          scan-type: 'config'
-          hide-progress: false
-          format: 'json'
-          output: '${{ github.event.repository.name }}-${{ matrix.module }}-results.json'
-          exit-code: '${{ inputs.exit-code }}'
-          ignore-unfixed: true
-          severity: '${{ inputs.severity }}'
-
-      - name: Generate github actions summary
+      
+      - name: Setup trivy bin 
+        shell: bash
+        run: |  
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+          tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/trivy
+      
+      - name: Generate results to Pull Request comments
+        id: trivy-scan
         run: |
-          FILE=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq '.Results')
-          if [[ "$FILE" != "null" ]]; then
-            RESULT=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq  '.Results[].MisconfSummary.Failures')
-            if [[ ! "$RESULT" -eq 0 ]]; then
-              echo "#### Ops, parece que temos alguns  pontos a serem corrigidos  :rotating_light:" >> $GITHUB_STEP_SUMMARY
-              ERRORS=$(cat ../${{ github.event.repository.name }}-${{ matrix.module }}-results.json | jq  '.Results[].Misconfigurations[].Title')
-              printf "$ERRORS\n" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "#### Show! nenhum problema encontrado nos arquivos de declaração da infraestrutura :green_heart:" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "#### Não foram encontrados arquivos de declaração de infraestrutura. :pencil:" >> $GITHUB_STEP_SUMMARY
-          fi
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          trivy config  --format table --exit-code  ${{ inputs.exit-code }} --severity  ${{ inputs.severity }} . | tee $TEMP_FILE
+          echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+        continue-on-error: true
+
+      - name: Update Pull Request with Results
+        if: steps.trivy-scan.outputs.logs != ''
+        uses: actions/github-script@v6
+        env:
+          TRIVY_RESULT_BASE64: ${{ steps.trivy-scan.outputs.logs }}
+        with:
+          result-encoding: string
+          script: |
+            const prCommentTrivy = async ({github, context}) => {
+              const base64String = process.env.TRIVY_RESULT_BASE64 || "Cg=="
+              const buff = Buffer.from(base64String, 'base64')
+              const trivyResultFormatted = buff.toString('utf-8')
+              
+              const prOutput = `
+            <details><summary><strong>Trivy Infra files scan results ${{ matrix.module }} </strong></summary>
+            \`\`\`bash\n
+            ${trivyResultFormatted}
+            \`\`\`
+            </details>`;
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: prOutput
+              }); 
+            }
+            await prCommentTrivy({github, context, core})
+        continue-on-error: true

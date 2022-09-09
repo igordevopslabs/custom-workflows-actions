@@ -1,4 +1,4 @@
-name: trivy-fs-scan
+name: trivy-deps-scan
 
 on:
   workflow_call:
@@ -6,44 +6,95 @@ on:
     inputs:
       skipp_file:
         type: string
-        required: true
+        required: false
+        default: 'gitleaks-report.sarif'
+      working_directory:
+        type: string
+        required: false
+        default: '.'
+      break_pipeline:
+        type: string
+        required: false
+        default: '0'
+      severity:
+        type: string
+        required: false
+        default: 'CRITICAL,HIGH'
 
 jobs:
   fs-scanning:
-    name: Repo File System Scanning 
+    name: Repo external deps Scanning 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
 
-      - name: Disable initramfs update
-        run: sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
-
-      - name: Disable man-db update
-        run: sudo rm -f /var/lib/man-db/auto-update
-
-      - name: Run Trivy vulnerability scanner filesystem mode
-        id: trivyfs
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy vulnerability scanner external deps mode
+        uses: aquasecurity/trivy-action@0.7.1
         with:
+          scan-ref: '${{ inputs.working_directory }}'
           scan-type: 'fs'
           ignore-unfixed: true
           hide-progress: true
           format: 'table'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'
+          severity: '${{ inputs.severity }}'
+          exit-code: '${{ inputs.break_pipeline }}'
           security-checks: 'secret,vuln'
           timeout: '2m0s'
           skip-files: '${{ inputs.skipp_file }}'
 
       - name: Generate Trivy JSON report
-        id: trivyreport
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.7.1
         with:
+          scan-ref: '${{ inputs.working_directory }}'
           scan-type: 'fs'
           hide-progress: true
           format: 'json'
           output: '${{ github.event.repository.name }}-results.json'
-          exit-code: '0'
+          exit-code: '${{ inputs.break_pipeline }}'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: '${{ inputs.severity }}'
+
+      - name: Setup trivy bin  
+        shell: bash
+        run: |  
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+          tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/trivy
+      - name: Generate results to Pull Request comments
+        id: trivy-scan
+        run: |
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          trivy fs  --format table --exit-code  0 --ignore-unfixed --vuln-type  os,library --security-checks  secret,vuln --severity ${{ inputs.severity }} --timeout  2m0s --no-progress --skip-files ${{ inputs.skipp_file }} ${{ inputs.working_directory }} | tee $TEMP_FILE
+          echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+        continue-on-error: true
+
+      - name: Update Pull Request with Results
+        if: steps.trivy-scan.outputs.logs != ''
+        uses: actions/github-script@v6
+        env:
+          TRIVY_RESULT_BASE64: ${{ steps.trivy-scan.outputs.logs }}
+        with:
+          result-encoding: string
+          script: |
+            const prCommentTrivy = async ({github, context}) => {
+              const base64String = process.env.TRIVY_RESULT_BASE64 || "Cg=="
+              const buff = Buffer.from(base64String, 'base64')
+              const trivyResultFormatted = buff.toString('utf-8')
+              
+              const prOutput = `
+            <details><summary><strong>Trivy external deps scan results</strong></summary>
+            \`\`\`bash\n
+            ${trivyResultFormatted}
+            \`\`\`
+            </details>`;
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: prOutput
+              }); 
+            }
+            await prCommentTrivy({github, context, core})
+        continue-on-error: true

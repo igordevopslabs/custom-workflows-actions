@@ -2,115 +2,98 @@ name: trivy-iac-scan
 
 on:
   workflow_call:
+
     inputs:
-      env:
+      scan_ref:
         type: string
-        required: false
-        default: production
-      scan_score:
-        type: number
-        description: 'A score to set exit-code 1 and break the pipeline execution'
-        required: false
-        default: 50
-      working_directory:
-        type: string
-        description: 'A default locate where trivy will run'
         required: false
         default: '.'
+      break_pipeline:
+        type: string
+        required: false
+        default: '0'
+      skip-dirs:
+        type: string
+        required: false
+        default: '/github/workspace/deploy'
+      severity:
+        type: string
+        required: false
+        default: 'CRITICAL,HIGH'
 
 jobs:
-  iac-scanning:
+  iac-scan:
     name: IAC Scanning 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
 
-      - name: Install Trivy bin
+      - name: Run trivy to iac Scan
+        uses: aquasecurity/trivy-action@0.7.1
+        with:
+          scan-ref: '${{ inputs.scan_ref }}'
+          scan-type: 'config'
+          hide-progress: false
+          format: 'table'
+          exit-code: '${{ inputs.break_pipeline }}'
+          ignore-unfixed: true
+          skip-dirs: '${{ inputs.skip-dirs }}'
+          severity: '${{ inputs.severity }}'
+
+      - name: Generate Trivy JSON report
+        uses: aquasecurity/trivy-action@0.7.1
+        with:
+          scan-ref: '${{ inputs.scan_ref }}'
+          scan-type: 'config'
+          hide-progress: false
+          format: 'json'
+          output: '${{ github.event.repository.name }}-results.json'
+          exit-code: '${{ inputs.break_pipeline }}'
+          ignore-unfixed: true
+          skip-dirs: '${{ inputs.skip-dirs }}'
+          severity: '${{ inputs.severity }}'
+
+      - name: Setup trivy bin 
         shell: bash
         run: |  
           wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
           tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/trivy
+      - name: Generate results to Pull Request comments
+        id: trivy-scan
+        run: |
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          trivy config --format table --exit-code  0 --severity  ${{ inputs.severity }} --skip-dirs '${{ inputs.skip-dirs }}' . | tee $TEMP_FILE
+          echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+        continue-on-error: true
 
-      - name: Disable initramfs update
-        run: sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
-
-      - name: Disable man-db update
-        run: sudo rm -f /var/lib/man-db/auto-update
-
-      - name: Trivy Iac Scanning
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          hide-progress: false
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'MEDIUM,CRITICAL,HIGH'
-
-      #- name: "Trivy Output"
-        #id: config_scan
-        #run: |
-          #set -o pipefail
-          #TEMP_FILE=$(mktemp)
-          #trivy config --severity MEDIUM,CRITICAL,HIGH ${{ inputs.working_directory}} | tee $TEMP_FILE
-          #echo "::set-output name=result::$(cat $TEMP_FILE)"
-        #continue-on-error: true
-
-      - name: Post Trivy coverage comments
+      - name: Update Pull Request with Results
+        if: steps.trivy-scan.outputs.logs != ''
+        uses: actions/github-script@v6
         env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-          SUMMARY_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github._id }}
-        run: |
-          curl \
-            -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/$REPO/issues/$PR_NUMBER/comments \
-            -d '{"body":"### Security jobs summary\n'$SUMMARY_URL'\n"}'
-
-      - name: Check helmfile existence
-        id: check_files
-        uses: andstor/file-existence-action@v1
+          TRIVY_RESULT_BASE64: ${{ steps.trivy-scan.outputs.logs }}
         with:
-          files: "deploy/helmfile.yaml"
-
-      - name: Install Helm
-        if: steps.check_files.outputs.files_exists == 'true'
-        shell: bash
-        run: |  
-          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-          chmod 700 get_helm.sh
-          ./get_helm.sh
-      
-      - name: Install Helm Plugins
-        if: steps.check_files.outputs.files_exists == 'true'
-        shell: bash
-        run: |
-          helm plugin install https://github.com/databus23/helm-diff --version v3.1.1
-          helm plugin install https://github.com/aslafy-z/helm-git --version 0.10.0
-      
-      - name: Install Helmfile
-        if: steps.check_files.outputs.files_exists == 'true'
-        shell: bash
-        run: |  
-          wget https://github.com/roboll/helmfile/releases/download/v0.143.5/helmfile_linux_386
-          chmod +x helmfile_linux_386
-          sudo mv helmfile_linux_386 /usr/local/bin/helmfile
-
-      - name: Install Polaris
-        if: steps.check_files.outputs.files_exists == 'true' 
-        shell: bash
-        run: |  
-          wget https://github.com/FairwindsOps/polaris/releases/download/7.0.1/polaris_linux_amd64.tar.gz
-          tar -xvf polaris_linux_amd64.tar.gz
-          sudo mv polaris /usr/local/bin/polaris
-
-      - name: Generate summary security report for helmchart
-        if: steps.check_files.outputs.files_exists == 'true'
-        shell: bash
-        run: |  
-          helmfile -f deploy/helmfile.yaml -e ${{inputs.env}} template >> ${{inputs.env}}-deploy.yaml && polaris audit --audit-path ${{inputs.env}}-deploy.yaml --format=pretty --only-show-failed-tests --set-exit-code-below-score ${{inputs.scan_score}}
-
+          result-encoding: string
+          script: |
+            const prCommentTrivy = async ({github, context}) => {
+              const base64String = process.env.TRIVY_RESULT_BASE64 || "Cg=="
+              const buff = Buffer.from(base64String, 'base64')
+              const trivyResultFormatted = buff.toString('utf-8')
+              
+              const prOutput = `
+            <details><summary><strong>Trivy Infra files scan results</strong></summary>
+            \`\`\`bash\n
+            ${trivyResultFormatted}
+            \`\`\`
+            </details>`;
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: prOutput
+              }); 
+            }
+            await prCommentTrivy({github, context, core})
+        continue-on-error: true
