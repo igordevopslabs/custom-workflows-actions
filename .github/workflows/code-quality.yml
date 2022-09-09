@@ -46,6 +46,11 @@ jobs:
         ls -lha && cat ${{ github.event.repository.name }}-report.json
       continue-on-error: true
 
+    - name: lendo report
+      run: |
+        cat ${{ github.event.repository.name }}-report.json
+      continue-on-error: true
+
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
