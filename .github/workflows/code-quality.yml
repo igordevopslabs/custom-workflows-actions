@@ -3,6 +3,19 @@ name: code-quality-sonnar
 on:
   workflow_call:
 
+    inputs:
+      exit_code:
+        type: string
+        required: false
+        default: '0'
+      severity:
+        type: string
+        required: false
+        default: 'CRITICAL,HIGH,MEDIUM'
+      sonnar_project_key:
+        type: string
+        required: true
+
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
@@ -11,9 +24,32 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Setup trivy bin 
+      shell: bash
+      run: |  
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+        tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
+        sudo mv trivy /usr/local/bin/trivy
+
+    - name: Generate results to Pull Request comments
+      id: trivy-scan
+      run: |
+        trivy image --exit-code ${{ inputs.exit_code }} --severity ${{ inputs.severity }} --no-progress --format template --template "@/template/sonarqube.tpl" -o ${{ github.event.repository.name }}-report.json
+      continue-on-error: true
+
+    - name: debug
+      run: |
+        ls -lha
+      continue-on-error: true
+
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
+      with:
+        projectBaseDir: ${{ github.workspace }}
+        args: >
+          -Dsonar.organization=${{ github.repository_owner }}
+          -Dsonar.projectKey=${{ inputs.sonnar_project_key }}
+          -Dsonar.externalIssuesReportPaths=./${{ github.event.repository.name }}-report.json
