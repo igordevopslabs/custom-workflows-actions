@@ -3,6 +3,11 @@ name: code-quality-sonnar
 on:
   workflow_call:
 
+    inputs:
+      sonnar_project_key:
+        type: string
+        required: true
+
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
@@ -17,12 +22,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
-        projectBaseDir: my-custom-directory
+        projectBaseDir: ${{ github.event.repository.name }}
         args: >
-          -Dsonar.organization=my-organization
-          -Dsonar.projectKey=my-projectkey
-          -Dsonar.python.coverage.reportPaths=coverage.xml
-          -Dsonar.sources=lib/
-          -Dsonar.test.exclusions=tests/**
-          -Dsonar.tests=tests/
-          -Dsonar.verbose=true
+          -Dsonar.organization=${{ github.repository_owner }}
+          -Dsonar.projectKey=${{ inputs.sonnar_project_key }}
