@@ -3,11 +3,6 @@ name: code-quality-sonnar
 on:
   workflow_call:
 
-    inputs:
-      sonnar_project_key:
-        type: string
-        required: true
-
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
