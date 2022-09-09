@@ -4,6 +4,16 @@ on:
   workflow_call:
 
     inputs:
+      app_name:
+        description: 'Application/Project name'
+        required: false
+        default: ${{ github.event.repository.name }}
+        type: string
+      dockerfile_path:
+        description: 'Application/Project path go files'
+        default: Dockerfile
+        required: false
+        type: string
       exit_code:
         type: string
         required: false
