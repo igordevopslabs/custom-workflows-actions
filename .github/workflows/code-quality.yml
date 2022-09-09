@@ -44,6 +44,7 @@ jobs:
     - name: debug
       run: |
         ls -lha
+        cat ${{ github.event.repository.name }}-report.json
       continue-on-error: true
 
     - name: SonarCloud Scan
