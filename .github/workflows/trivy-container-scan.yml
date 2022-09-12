@@ -86,3 +86,12 @@ jobs:
             }
             await prCommentTrivy({github, context, core})
         continue-on-error: true
+
+      - name: Trivy Slack Notification
+        if: steps.trivy-scan.outputs.logs != ''
+        uses: igordevopslabs/custom-actions-app/trivy-send-slack-notification@main
+        with:
+          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          github_token: ${{ secrets.GH_TOKEN }}
+          tag: ${{ inputs.tag }}
+          scan_type: 'trivy container image'    

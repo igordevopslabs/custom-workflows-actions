@@ -118,4 +118,5 @@ jobs:
         with:
           slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
           github_token: ${{ secrets.GH_TOKEN }}
-          tag: ${{ inputs.tag }}    
+          tag: ${{ inputs.tag }}
+          scan_type: 'trivy fs'    
