@@ -20,6 +20,10 @@ on:
         type: string
         required: false
         default: 'CRITICAL,HIGH'
+      tag:
+        type: string
+        required: false
+        default: 'main'
 
 
 jobs:
@@ -76,6 +80,7 @@ jobs:
         continue-on-error: true
 
       - name: Update Pull Request with Results
+        id: pr-comment
         if: steps.trivy-scan.outputs.logs != ''
         uses: actions/github-script@v6
         env:
@@ -105,4 +110,12 @@ jobs:
               }); 
             }
             await prCommentTrivy({github, context, core})
-        continue-on-error: true    
+        continue-on-error: true
+
+      - name: Trivy Slack Notification
+        if: steps.trivy-scan.outputs.logs != ''
+        uses: igordevopslabs/custom-actions-apps/trivy-send-slack-notification@main
+        with:
+          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          github_token: ${{ secrets.GH_TOKEN }}
+          tag: ${{ inputs.tag }}    
