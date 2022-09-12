@@ -33,6 +33,10 @@ on:
         type: string
         required: false
         default: "@template/sonarqube.tpl"
+      sonnar_verbose:
+        type: string
+        required: false
+        default: "false"
 
 jobs:
   sonarcloud:
@@ -78,4 +82,4 @@ jobs:
           -Dsonar.organization=${{ github.repository_owner }}
           -Dsonar.projectKey=${{ inputs.sonnar_project_key }}
           -Dsonar.externalIssuesReportPaths=./${{ github.event.repository.name }}-report.json
-          -Dsonar.verbose=true
+          -Dsonar.verbose=${{ inputs.sonnar_verbose }}
