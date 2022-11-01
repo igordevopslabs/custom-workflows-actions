@@ -13,28 +13,13 @@ jobs:
     name: Secret Scanning 
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Application Repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
-          fetch-depth: "0"
-
-      - name: Disable initramfs update
-        run: sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
-
-      - name: Disable man-db update
-        run: sudo rm -f /var/lib/man-db/auto-update
-
-      - name: Run Gitleaks
-        id: gitleaks
-        uses: DariuszPorowski/github-action-gitleaks@v2
-        with:
-          report_format: "sarif"
-          fail: false
-
-      - name: Get the output from the gitleaks step
-        run: |
-          echo "exitcode: ${{ steps.gitleaks.outputs.exitcode }}"
-          echo "result: ${{ steps.gitleaks.outputs.result }}"
-          echo "output: ${{ steps.gitleaks.outputs.output }}"
-          echo "command: ${{ steps.gitleaks.outputs.command }}"
-          echo "report: ${{ steps.gitleaks.outputs.report }}"
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITLEAKS_NOTIFY_USER_LIST:
+            - @igoritos22
+          GITLEAKS_ENABLE_COMMENTS: true
+          GITLEAKS_ENABLE_SUMMARY: true
