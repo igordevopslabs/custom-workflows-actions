@@ -19,17 +19,5 @@ jobs:
           fetch-depth: "0"
 
       - name: Custom gitleaks config
-        uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main    
-
-      - name: Run Gitleaks
-        id: gitleaks
-        uses: DariuszPorowski/github-action-gitleaks@v2
-        with:
-          report_format: "sarif"
-          config: SecretChecks.toml
-          fail: false
-
-      - name: Get the output from the gitleaks step
-        run: |
-          echo "result: ${{ steps.gitleaks.outputs.result }}"
+        uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main
 
