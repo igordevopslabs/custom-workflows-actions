@@ -27,6 +27,7 @@ jobs:
         with:
           report_format: "sarif"
           config: SecretChecks.toml
+          source: '.'
           fail: false
 
       - name: Get the output from the gitleaks step
