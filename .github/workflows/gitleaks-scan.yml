@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: "2"
+          fetch-depth: "0"
 
       - name: Custom gitleaks config
         uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main    
