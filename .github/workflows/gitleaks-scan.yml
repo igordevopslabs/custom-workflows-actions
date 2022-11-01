@@ -8,12 +8,11 @@ on:
         type: string
         required: false
         default: 'zricethezav/gitleaks:latest'
-    inputs:
       exit_code:
         type: string
         required: false
         default: '0'
-
+        
 jobs:
   secret-scanning:
     name: Secret Scanning 
