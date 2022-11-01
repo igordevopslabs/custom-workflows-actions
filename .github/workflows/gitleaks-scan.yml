@@ -1,12 +1,18 @@
-name: trivy-iac-scan
+name: secret-scanning
 
 on:
   workflow_call:
 
     inputs:
-      application_name:
+      image:
         type: string
         required: false
+        default: 'zricethezav/gitleaks:latest'
+    inputs:
+      exit_code:
+        type: string
+        required: false
+        default: '0'
 
 jobs:
   secret-scanning:
@@ -18,16 +24,13 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - name: Custom gitleaks config
-        uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main
-
       - name: Generate results to Pull Request comments
         id: gitleaks-scan
         shell: bash
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          docker run -v $GITHUB_WORKSPACE:/path zricethezav/gitleaks:latest --source="/path" detect --log-level warn --redact --verbose --redact -c /path/SecretChecks.toml --exit-code 0 --no-banner | tee $TEMP_FILE
+          docker run -v $GITHUB_WORKSPACE:/path ${{ inputs.image }} --source="/path" detect --log-level warn --redact --verbose --redact --exit-code ${{ inputs.exit_code }} --no-banner | tee $TEMP_FILE
           echo "Counting $TEMP_FILE bytes"
           BYTE_COUNT=$(wc -c < $TEMP_FILE)
           echo "Bytes: $BYTE_COUNT"
@@ -58,7 +61,7 @@ jobs:
               const GlResultFormatted = buff.toString('utf-8')
                 
               const prOutput = `
-            <details><summary><strong>Git Leaks Results</strong></summary>
+            <details><summary><strong>Gitleaks Results</strong></summary>
 
             \`\`\`bash\n
             ${GlResultFormatted}
@@ -75,3 +78,12 @@ jobs:
             }
             await prCommentGl({github, context, core})
         continue-on-error: true
+
+      - name: Gitleaks Slack Notification
+        if: steps.gitleaks-scan.outputs.logs != ''
+        uses: igordevopslabs/custom-actions-app/trivy-send-slack-notification@main
+        with:
+          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          github_token: ${{ secrets.GH_TOKEN }}
+          tag: ${{ inputs.tag }}
+          scan_type: 'secret scanning'
