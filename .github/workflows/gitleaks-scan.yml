@@ -26,7 +26,7 @@ jobs:
         uses: DariuszPorowski/github-action-gitleaks@v2.0.4 
         with:
           report_format: "sarif"
-          config: ./SecretChecks.toml
+          config: SecretChecks.toml
           fail: false
 
       - name: Get the output from the gitleaks step
