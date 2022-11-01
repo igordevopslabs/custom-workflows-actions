@@ -21,3 +21,57 @@ jobs:
       - name: Custom gitleaks config
         uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main
 
+      - name: Generate results to Pull Request comments
+        id: gitleaks-scan
+        shell: bash
+        run: |
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          docker run -v $GITHUB_WORKSPACE:/path zricethezav/gitleaks:latest --source="/path" detect --log-level warn --redact --verbose --redact -c /path/SecretChecks.toml --exit-code 0 --no-banner | tee $TEMP_FILE
+          echo "Counting $TEMP_FILE bytes"
+          BYTE_COUNT=$(wc -c < $TEMP_FILE)
+          echo "Bytes: $BYTE_COUNT"
+          echo "------------------------------------------------------------------------"
+          echo "Byte limit for Github Pull Request comment: 50000"
+          if (( $BYTE_COUNT < 50000 )); then
+            echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+            exit 0
+          fi
+            
+          echo "Skipping Pull Request Gitleaks comment"
+          RESULT="*Gitleaks scan is over character threshold, please check https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::set-output name=logs::$(echo $RESULT | base64 | tr -d '\n')"
+        continue-on-error: true
+
+      - name: Update Pull Request with Results
+        id: update-pr
+        if: steps.gitleaks-scan.outputs.logs != ''
+        uses: actions/github-script@v6
+        env:
+          GL_RESULT_BASE64: ${{ steps.gitleaks-scan.outputs.logs }}
+        with:
+          result-encoding: string
+          script: |
+            const prCommentGl = async ({github, context}) => {
+              const base64String = process.env.GL_RESULT_BASE64 || "Cg=="
+              const buff = Buffer.from(base64String, 'base64')
+              const GlResultFormatted = buff.toString('utf-8')
+                
+              const prOutput = `
+            <details><summary><strong>Git Leaks Results</strong></summary>
+
+            \`\`\`bash\n
+            ${GlResultFormatted}
+            \`\`\`
+
+            </details>`;
+
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: prOutput
+              }); 
+            }
+            await prCommentGl({github, context, core})
+        continue-on-error: true
