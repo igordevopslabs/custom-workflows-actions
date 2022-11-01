@@ -18,12 +18,6 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - name: Disable initramfs update
-        run: sudo sed -i 's/yes/no/g' /etc/initramfs-tools/update-initramfs.conf
-
-      - name: Disable man-db update
-        run: sudo rm -f /var/lib/man-db/auto-update
-
       - name: Run Gitleaks
         id: gitleaks
         uses: DariuszPorowski/github-action-gitleaks@v2.0.4 
@@ -33,8 +27,4 @@ jobs:
 
       - name: Get the output from the gitleaks step
         run: |
-          echo "exitcode: ${{ steps.gitleaks.outputs.exitcode }}"
           echo "result: ${{ steps.gitleaks.outputs.result }}"
-          echo "output: ${{ steps.gitleaks.outputs.output }}"
-          echo "command: ${{ steps.gitleaks.outputs.command }}"
-          echo "report: ${{ steps.gitleaks.outputs.report }}"
