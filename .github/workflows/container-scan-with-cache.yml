@@ -1,0 +1,144 @@
+name: container-image-scan-with-cache
+
+on:
+  workflow_call:
+
+    inputs:
+      image_name:
+        type: string
+        required: false
+        default: ${{ github.event.repository.name }}
+      push:
+        description: 'Boolean that controls if the image should be pushed to the registry.'
+        required: false
+        default: true
+        type: boolean
+      build-args:
+        description: 'List of build-time variables'
+        required: false
+        type: string
+        default: ""
+      dockerfile-path:
+        description: 'Dockerfile path'
+        required: false
+        type: string
+        default: "Dockerfile"
+      context:
+        description: 'Dockerfile context'
+        required: false
+        type: string
+        default: "."
+      severity:
+        type: string
+        required: false
+        default: 'CRITICAL,HIGH'
+      exit_code:
+        type: string
+        required: false
+        default: '0'
+
+jobs:
+  container-image-scan:
+    name: Build & Scan local container image 
+    runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Set outputs to container tag
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Setup Docker Context for buildx
+        id: buildx-context
+        run: |
+          docker context create builders
+
+      - name: Setup Docker buildx with local registry
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+          endpoint: builders
+      
+      - name: Build and push with local registry
+        uses: docker/build-push-action@v3
+        with:
+          context: ${{ inputs.context }}
+          push: ${{ inputs.push }}
+          pull: true
+          file: ${{ inputs.dockerfile-path }}
+          builder: ${{ steps.buildx.outputs.name }}
+          tags: localhost:5000/name/${{ inputs.image_name }}:${{ steps.vars.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: ${{ inputs.build-args }}
+          labels: |
+            igordevopslabs.labs.vcs-ref=${{ steps.vars.outputs.sha_short }}
+
+      - name: Setup trivy bin 
+        shell: bash
+        run: |  
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+          tar -xvf trivy_0.31.3_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/trivy
+
+      - name: Generate results to Pull Request comments
+        id: trivy-scan
+        run: |
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          trivy image --no-progress --severity ${{ inputs.severity }} --exit-code  ${{inputs.exit_code}} --ignore-unfixed localhost:5000/name/${{ inputs.image_name }}:${{ steps.vars.outputs.sha_short }} | tee $TEMP_FILE
+          echo "Counting $TEMP_FILE bytes"
+          BYTE_COUNT=$(wc -c < $TEMP_FILE)
+          echo "Bytes: $BYTE_COUNT"
+          echo "------------------------------------------------------------------------"
+          echo "Byte limit for Github Pull Request comment: 50000"
+          if (( $BYTE_COUNT < 50000 )); then
+            echo "::set-output name=logs::$(cat $TEMP_FILE | base64 | tr -d '\n')"
+            exit 0
+          fi
+          
+          echo "Skipping Pull Request Trivy Scan comment"
+          RESULT="*Trivy Container Image scan is over character threshold, please check https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::set-output name=logs::$(echo $RESULT | base64 | tr -d '\n')"
+        continue-on-error: true
+
+      - name: Update Pull Request with Results
+        if: steps.trivy-scan.outputs.logs != ''
+        uses: actions/github-script@v6
+        env:
+          TRIVY_RESULT_BASE64: ${{ steps.trivy-scan.outputs.logs }}
+        with:
+          result-encoding: string
+          script: |
+            const prCommentTrivy = async ({github, context}) => {
+              const base64String = process.env.TRIVY_RESULT_BASE64 || "Cg=="
+              const buff = Buffer.from(base64String, 'base64')
+              const trivyResultFormatted = buff.toString('utf-8')
+              
+              const prOutput = `
+            <details><summary><strong>Trivy Container Image Scan results</strong></summary>
+
+            \`\`\`bash\n
+            ${trivyResultFormatted}
+            \`\`\`
+
+            </details>`;
+
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: prOutput
+              }); 
+            }
+            await prCommentTrivy({github, context, core})
+        continue-on-error: true
