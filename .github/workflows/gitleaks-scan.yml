@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: "0"
+          ref: ${{ github.head_ref }}
 
       - name: Custom gitleaks config
         uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main    
@@ -26,8 +27,8 @@ jobs:
         uses: DariuszPorowski/github-action-gitleaks@v2
         with:
           report_format: "sarif"
+          config: SecretChecks.toml
           fail: false
-        continue-on-error: true
 
       - name: Get the output from the gitleaks step
         run: |
