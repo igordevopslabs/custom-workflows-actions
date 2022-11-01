@@ -17,10 +17,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: "0"
-          ref: ${{ github.head_ref }}
 
-      - name: trufflehog-actions-scan
-        uses: edplato/trufflehog-actions-scan@master
+      - name: Custom gitleaks config
+        uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main    
+
+      - name: Run Gitleaks
+        id: gitleaks
+        uses: DariuszPorowski/github-action-gitleaks@v2
         with:
-          scanArguments: "--regex --entropy=False --max_depth=5 --rules /regexes.json"
+          report_format: "sarif"
+          config: SecretChecks.toml
+          fail: false
+
+      - name: Get the output from the gitleaks step
+        run: |
+          echo "result: ${{ steps.gitleaks.outputs.result }}"
 
