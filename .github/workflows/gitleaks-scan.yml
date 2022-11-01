@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: "0"
+          fetch-depth: "2"
 
       - name: Custom gitleaks config
         uses: igordevopslabs/custom-actions-app/gitleaks-config-file@main    
@@ -27,7 +27,6 @@ jobs:
         with:
           report_format: "sarif"
           config: SecretChecks.toml
-          source: '.env'
           fail: false
 
       - name: Get the output from the gitleaks step
