@@ -19,6 +19,6 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GITLEAKS_NOTIFY_USER_LIST: @igoritos22
+          GITLEAKS_NOTIFY_USER_LIST: "@igoritos22"
           GITLEAKS_ENABLE_COMMENTS: true
           GITLEAKS_ENABLE_SUMMARY: true
