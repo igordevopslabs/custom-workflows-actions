@@ -23,6 +23,11 @@ jobs:
         with:
           fetch-depth: "0"
 
+      - name: git head
+        run: |
+          echo "My current SHA is $GITHUB_SHA" 
+
+
       - name: Generate results to Pull Request comments
         id: gitleaks-scan
         shell: bash
