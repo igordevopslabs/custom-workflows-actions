@@ -25,7 +25,7 @@ jobs:
 
       - name: git head
         run: |
-          echo "My current SHA is $GITHUB_SHA" 
+          echo "My current SHA is ${{ github.event.pull_request.head.sha }}" 
 
 
       - name: Generate results to Pull Request comments
