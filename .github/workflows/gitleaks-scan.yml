@@ -28,8 +28,15 @@ jobs:
           echo "My current SHA is ${{ github.event.pull_request.head.sha }}" 
           echo "My current SHA is $GITHUB_SHA" 
 
+      - name: Run Gitleaks with Action
+        id: gitleaks
+        uses: DariuszPorowski/github-action-gitleaks@v2
+        with:
+          report_format: "sarif"
+          fail: '${{ inputs.exit_code }}'
 
-      - name: Generate results to Pull Request comments
+
+      - name: Run Gitleaks
         id: gitleaks-scan
         shell: bash
         run: |
