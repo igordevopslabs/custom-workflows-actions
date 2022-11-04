@@ -34,6 +34,7 @@ jobs:
             echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
           fi
           echo "::set-output name=commits_number::$(git rev-list origin/master..HEAD --count)"
+        continue-on-error: true
 
       - name: Run Gitleaks
         id: gitleaks-scan
