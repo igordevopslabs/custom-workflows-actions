@@ -28,7 +28,7 @@ jobs:
           fetch-depth: "0"
 
       - name: Set outputs to number of commits
-        if: github.base_ref == 'main'
+        if: github.base_ref == 'master'
         id: vars
         run: echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
         continue-on-error: true
