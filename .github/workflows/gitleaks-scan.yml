@@ -38,7 +38,7 @@ jobs:
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          docker run -v $GITHUB_WORKSPACE:/path ${{ inputs.image }} --source="/path" detect --log-level info --redact --verbose --exit-code ${{ inputs.exit_code }} --no-banner --log-opts "-n ${{ inputs.number_commits}} --no-merges"| tee $TEMP_FILE
+          docker run -v $GITHUB_WORKSPACE:/path ${{ inputs.image }} --source="/path" detect --log-level info --redact --verbose --exit-code ${{ inputs.exit_code }} --no-banner --log-opts "-n 14 --no-merges"| tee $TEMP_FILE
           echo "Counting $TEMP_FILE bytes"
           BYTE_COUNT=$(wc -c < $TEMP_FILE)
           echo "Bytes: $BYTE_COUNT"
