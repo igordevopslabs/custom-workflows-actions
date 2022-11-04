@@ -27,10 +27,9 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - name: Get the number of commits that will be analyzed
-        run: |
-          COMMITS=$(git rev-list origin/main..HEAD --count) >> $GITHUB_ENV
-          echo "Number of commits that will be analyzed is: $COMMITS"
+      - name: Set outputs to number of commits
+        id: vars
+        run: echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
 
       - name: Run Gitleaks
         id: gitleaks-scan
@@ -38,7 +37,7 @@ jobs:
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          docker run -v $GITHUB_WORKSPACE:/path ${{ inputs.image }} --source="/path" detect --log-level info --redact --verbose --exit-code ${{ inputs.exit_code }} --no-banner --log-opts "-n \$COMMITS --no-merges"| tee $TEMP_FILE
+          docker run -v $GITHUB_WORKSPACE:/path ${{ inputs.image }} --source="/path" detect --log-level info --redact --verbose --exit-code ${{ inputs.exit_code }} --no-banner --log-opts "-n ${{ steps.vars.outputs.commits_number }} --no-merges"| tee $TEMP_FILE
           echo "Counting $TEMP_FILE bytes"
           BYTE_COUNT=$(wc -c < $TEMP_FILE)
           echo "Bytes: $BYTE_COUNT"
