@@ -31,11 +31,11 @@ jobs:
         id: vars
         run: |
           echo "Check the base_ref"
-          if (( ${{ github.base_ref }} == main )); then
-            echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
+          if (( ${{ github.base_ref }} == master )); then
+            echo "::set-output name=commits_number::$(git rev-list origin/master..HEAD --count)"
             exit 0
           fi
-          echo "::set-output name=commits_number::$(git rev-list origin/master..HEAD --count)"
+          echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
         continue-on-error: true
 
       - name: Run Gitleaks
