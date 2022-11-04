@@ -29,7 +29,11 @@ jobs:
 
       - name: Set outputs to number of commits
         id: vars
-        run: echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
+        run: |
+          if (( ${{ github.base_ref }} == "main" )); then
+            echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
+          fi
+          echo "::set-output name=commits_number::$(git rev-list origin/master..HEAD --count)"
 
       - name: Run Gitleaks
         id: gitleaks-scan
