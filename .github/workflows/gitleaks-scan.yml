@@ -23,18 +23,9 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - name: git head
+      - name: Commit that will be analyzed
         run: |
-          echo "My current SHA is ${{ github.event.pull_request.head.sha }}" 
-          echo "My current SHA is $GITHUB_SHA" 
-
-      - name: Run Gitleaks with Action
-        id: gitleaks
-        uses: DariuszPorowski/github-action-gitleaks@v2
-        with:
-          report_format: "sarif"
-          fail: '${{ inputs.exit_code }}'
-
+          echo "My current commit SHA that will be analyzed  by gitleaks is ${{ github.event.pull_request.head.sha }}"
 
       - name: Run Gitleaks
         id: gitleaks-scan
