@@ -36,7 +36,7 @@ jobs:
       - name: Set outputs to number of commits
         if: github.base_ref == 'master'
         id: vars
-        run: echo "::set-output name=commits_number::$(git rev-list origin/main..HEAD --count)"
+        run: echo "::set-output name=commits_number::$(git rev-list origin/master..HEAD --count)"
         continue-on-error: true
 
       - name: Run Gitleaks
