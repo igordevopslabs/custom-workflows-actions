@@ -27,6 +27,13 @@ jobs:
         with:
           fetch-depth: "0"
 
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - run: git fetch
+      - run: git log origin/${{ github.event.pull_request.base.ref }}..
+
       - name: Commit that will be analyzed
         run: |
           echo "My current commit SHA that will be analyzed  by gitleaks is ${{ github.event.pull_request.head.sha }}"
