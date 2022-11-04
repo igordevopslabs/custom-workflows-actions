@@ -27,16 +27,10 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - run: git fetch
-      - run: git log origin/${{ github.event.pull_request.base.ref }}..
-
-      - name: Commit that will be analyzed
+      - name: Get the number of commits that will be analyzed
         run: |
-          echo "My current commit SHA that will be analyzed  by gitleaks is ${{ github.event.pull_request.head.sha }}"
+          COMMITS=$(git log main..${{github.head_ref}} --pretty=oneline | wc -l) >> $GITHUB_ENV
+          echo "Number of commits that will be analyzed is: $COMMITS"
 
       - name: Run Gitleaks
         id: gitleaks-scan
