@@ -29,7 +29,7 @@ jobs:
 
       - name: Get the number of commits that will be analyzed
         run: |
-          COMMITS=$(git rev-list HEAD --count --no-merges) >> $GITHUB_ENV
+          COMMITS=$(git rev-list origin..HEAD --count) >> $GITHUB_ENV
           echo "Number of commits that will be analyzed is: $COMMITS"
 
       - name: Run Gitleaks
