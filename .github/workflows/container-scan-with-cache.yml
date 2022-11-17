@@ -140,10 +140,13 @@ jobs:
               
               const prOutput = `
             <details><summary><strong>Trivy Container Image Scan results</strong></summary>
+
             \`\`\`bash\n
             ${trivyResultFormatted}
             \`\`\`
+
             </details>`;
+
               github.rest.issues.createComment({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
