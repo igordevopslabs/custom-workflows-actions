@@ -105,6 +105,7 @@ jobs:
           echo "Counting $TEMP_FILE bytes"
           BYTE_COUNT=$(wc -c < $TEMP_FILE)
           FINDINGS=$(cat $TEMP_FILE | sed -n 's/.*\(Total: 0\).*/\1/p')
+          echo $FINDINGS
           SUCCESS="Total: 0"
           echo "Bytes: $BYTE_COUNT"
           echo "------------------------------------------------------------------------"
