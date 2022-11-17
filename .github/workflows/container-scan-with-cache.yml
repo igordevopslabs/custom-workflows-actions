@@ -139,9 +139,10 @@ jobs:
               const trivyResultFormatted = buff.toString('utf-8')
               
               const prOutput = `
-            <summary><strong>:radioactive: STOP!! You container image has Vulnerabilities :radioactive: </strong></summary>
+            <summary><strong>:poop: :radioactive: :rotating_light: STOP!! You container image has Vulnerabilities :poop: :radioactive: :rotating_light: </strong></summary>
 
             \`\`\`bash\n
+            #Container Image Security Scan Report:\n\n
             ${trivyResultFormatted}
             \`\`\`
 
@@ -171,9 +172,10 @@ jobs:
               const trivyResultFormatted = buff.toString('utf-8')
               
               const prOutput = `
-            <summary><strong>You rock this!!! :green_heart: </strong></summary>
+            <summary><strong>:1st_place_medal: This container image is safe!!! :beginner: </strong></summary>
 
             \`\`\`bash\n
+            #Container Image Security Scan Report:\n\n
             ${trivyResultFormatted}
             \`\`\`
 
