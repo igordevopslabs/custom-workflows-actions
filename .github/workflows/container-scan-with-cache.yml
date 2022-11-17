@@ -110,7 +110,7 @@ jobs:
           echo "------------------------------------------------------------------------"
           echo "Byte limit for Github Pull Request comment: 50000"
           if (( $BYTE_COUNT < 50000 )); then
-            if [[ "$FINDINGS" == "$SUCCESS" ]]; then
+            if (( $FINDINGS == $SUCCESS )); then
               RESULT="NO VULNERABILITY FOUND <3"
               echo "logs=$(echo $RESULT | base64 | tr -d '\n')" >> $GITHUB_OUTPUT
             else
