@@ -45,7 +45,7 @@ on:
 jobs:
   container-image-scan:
     name: Build & Scan local container image 
-    runs-on: [self-hosted, runner-shared-deploy-apps]
+    runs-on: ubuntu-latest
     services:
       registry:
         image: registry:2
