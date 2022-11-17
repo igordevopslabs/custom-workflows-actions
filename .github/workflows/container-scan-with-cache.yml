@@ -139,13 +139,13 @@ jobs:
               const trivyResultFormatted = buff.toString('utf-8')
               
               const prOutput = `
-            <details><summary><strong>Trivy Container Image Scan results</strong></summary>
+            <summary><strong>Trivy Container Image Scan results</strong></summary>
 
             \`\`\`bash\n
             ${trivyResultFormatted}
             \`\`\`
 
-            </details>`;
+            `;
 
               github.rest.issues.createComment({
                   issue_number: context.issue.number,
