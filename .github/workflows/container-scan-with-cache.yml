@@ -40,7 +40,7 @@ on:
       loki_url_api:
         type: string
         required: false
-        default: 'https://logs-prod-017.grafana.net'
+        default: 'https://logs-prod-017.grafana.net/loki/api/v1/push'
 
 jobs:
   container-image-scan:
