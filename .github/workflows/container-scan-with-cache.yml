@@ -247,5 +247,5 @@ jobs:
           LOKI_URL: ${{inputs.loki_url_api}}
         if: steps.trivy-scan.outputs.logs != ''
         run: |
-          curl -v -d "@${{ github.event.repository.name }}-report.json" -X POST $LOKI_URL -H "Content-Type: application/json"
+          curl -v -d "@${{ github.event.repository.name }}-report.json" -X POST $LOKI_URL -u "344024:configured" -H "Content-Type: application/json"
         continue-on-error: true
