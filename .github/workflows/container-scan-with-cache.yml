@@ -190,3 +190,62 @@ jobs:
             }
             await prCommentTrivy({github, context, core})
         continue-on-error: true
+
+      - name: set release date in nanoseconds
+        if: steps.trivy-scan.outputs.logs != ''
+        run: |
+          echo "TS=$(date +%s%9N)" >> ${GITHUB_ENV}
+        
+      - name: Create template for Loki
+        env:
+          IMAGE_NAME: ${{ inputs.image_name }}
+        if: steps.trivy-scan.outputs.logs != ''
+        run: |
+          echo "TS=$(date +%s%9N)" >> ${GITHUB_ENV} && \
+          cat >loki.tpl <<EOL
+            {{- /* Template based on https://grafana.com/docs/loki/latest/api/ */ -}}
+            {
+              "streams": [
+                {
+                  "stream": {
+                    "app": "${{ github.event.repository.name }}-gha"
+                  },
+                  "values": [
+                        {{- \$t_first := true }}
+                          {{- range \$result := . }}
+                            {{- \$vulnerabilityType := .Type }}
+                            {{- range .Vulnerabilities -}}
+                            {{- if \$t_first -}}
+                            {{- \$t_first = false -}}
+                            {{ else -}}
+                            ,
+                            {{- end }}
+                      [
+                        "${TS}",
+                        "{\"VulnID\":\"{{ .VulnerabilityID }}\",\"pkg\":\"{{ .PkgName }}\",\"currentVersion\":\"{{ .InstalledVersion }}\",\"fixVersion\":\"{{ .FixedVersion }}\",\"fullDetail\":\"{{ .PrimaryURL }}\",\"severity\":\"{{ .Severity }}\",\"info\":\"{{ .Title }}\",\"scan\":\"${{ github.job }}\",\"run_id\":\"${{ github.run_id }}\",\"repository\":\"${{ github.repository }}\",\"branch\":\"${{ github.head_ref }}\",\"image\":\"$IMAGE_NAME:${{ steps.vars.outputs.sha_short }}\"}"
+                      ]
+                        {{- end -}}
+                      {{- end }}
+                  ]
+                }
+            ]}
+          EOL
+        continue-on-error: true
+
+      - name: Generate report to send results to Loki
+        env:
+          SEVERITY: ${{ inputs.severity }}
+          EXIT_CODE: ${{inputs.exit_code}}
+          IMAGE_NAME: ${{ inputs.image_name }}
+        if: steps.trivy-scan.outputs.logs != ''
+        run: |
+          trivy image --no-progress --severity $SEVERITY --exit-code  $EXIT_CODE --ignore-unfixed --vuln-type os --format template --template @loki.tpl -o ${{ github.event.repository.name }}-report.json localhost:5000/name/$IMAGE_NAME:${{ steps.vars.outputs.sha_short }}
+        continue-on-error: true
+
+      - name: Send data
+        env:
+          LOKI_URL: ${{inputs.loki_url_api}}
+        if: steps.trivy-scan.outputs.logs != ''
+        run: |
+          curl -v -d "@${{ github.event.repository.name }}-report.json" -X POST $LOKI_URL -H "Content-Type: application/json"
+        continue-on-error: true
