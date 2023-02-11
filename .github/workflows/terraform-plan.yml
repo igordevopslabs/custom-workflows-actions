@@ -63,7 +63,7 @@ jobs:
       shell: bash
       run: |
         mkdir -p $HOME/.aws && cat <<EOF >$HOME/.aws/credentials
-        [demo]
+        [labs]
         aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws_secret_access_key = ${{ secrets.AWS_ACCESS_SECRET_KEY }}
         EOF
@@ -72,7 +72,7 @@ jobs:
       shell: bash
       run: |
         cat <<EOF >$HOME/.aws/config
-        [demo]
+        [labs]
         region = us-east-1
         output = json
         EOF
@@ -100,9 +100,6 @@ jobs:
         terragrunt init --terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
 
     # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan
@@ -110,6 +107,3 @@ jobs:
         terragrunt run-all plan --terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
