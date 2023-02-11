@@ -122,21 +122,21 @@ jobs:
     # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan
       run: |
-        terragrunt run-all plan -out=output --terragrunt-non-interactive
+        terragrunt run-all plan -out=output.tfplan --terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
     # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan Out
       run: |
-        terragrunt show -no-color -json output > output.json --terragrunt-non-interactive
+        terragrunt show -no-color -json output.tfplan > output.json --terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
     # Generates an execution plan for Terragrunt
     - name: OPA Analisys
       run: |
-        ls -lha
+        cat ${{ inputs.working_directory }}/output.json
       continue-on-error: true
 
     # Generates an execution plan for Terragrunt
