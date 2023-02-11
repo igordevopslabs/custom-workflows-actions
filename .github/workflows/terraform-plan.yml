@@ -109,7 +109,7 @@ jobs:
     - name: Setup OPA
       run: |
         curl -L -o opa https://openpolicyagent.org/downloads/v${{ inputs.opa_version }}/opa_linux_amd64_static
-        sudo chmod 755 ./opa
+        sudo chmod 755 opa && sudo mv opa /usr/local/bin/opa
         opa version
 
     # Initialize a new or existing Terragrunt working directory by creating initial files, loading any remote state, downloading modules, etc.
