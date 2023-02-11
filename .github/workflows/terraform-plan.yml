@@ -36,12 +36,7 @@ on:
 jobs:
   Terragrunt:
     name: 'Terragrunt'
-    runs-on: ubuntu-20.04
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
+    runs-on: ubuntu-latest
 
     steps:
     # Checkout the repository to the GitHub Actions runner
