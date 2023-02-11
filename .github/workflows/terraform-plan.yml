@@ -45,7 +45,7 @@ jobs:
     - name: Configure AWS Credentials
       shell: bash
       run: |
-        cat <<EOF >$HOME/credentials
+        mkdir -p $HOME/.aws && cat <<EOF >$HOME/.aws/credentials
         [demo]
         aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws_secret_access_key = ${{ secrets.AWS_ACCESS_SECRET_KEY }}
@@ -54,7 +54,7 @@ jobs:
     - name: Configure AWS Credentials
       shell: bash
       run: |
-        cat <<EOF >$HOME/config
+        cat <<EOF >$HOME/.aws/config
         [demo]
         region = us-east-1
         output = json
