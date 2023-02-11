@@ -36,6 +36,23 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: LAB SSH key
+      shell: bash
+      run: |
+        mkdir -p "$HOME/.ssh"
+        SSH_PATH="$HOME/.ssh"
+      
+        touch "$SSH_PATH/known_hosts"
+        echo "${{secrets.LAB_SSH_KEY}}" > "$SSH_PATH/id_rsa"
+      
+        chmod 700 "$SSH_PATH"
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+        chmod 600 "$SSH_PATH/known_hosts"
+        chmod 600 "$SSH_PATH/id_rsa"
+      
+        eval $(ssh-agent)
+        ssh-add "$SSH_PATH/id_rsa"
+
     - name: Install AWS CLI
       uses: unfor19/install-aws-cli-action@v1.0.4
       with:
