@@ -21,6 +21,18 @@ on:
         required: false
         default: "0.39.2"
 
+      opa_version:
+        description: "The OPA version."
+        type: string
+        required: false
+        default: "0.49.0"
+
+      opa_policy:
+        description: "The opa policy to run analysis."
+        type: string
+        required: false
+        default: "tags.rego"
+
 jobs:
   Terragrunt:
     name: 'Terragrunt'
@@ -94,6 +106,12 @@ jobs:
         sudo chmod +x /bin/terragrunt
         terragrunt -v
 
+    - name: Setup OPA
+      run: |
+        curl -L -o opa https://openpolicyagent.org/downloads/v${{ inputs.opa_version }}/opa_linux_amd64_static
+        sudo chmod 755 ./opa
+        opa version
+
     # Initialize a new or existing Terragrunt working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terragrunt Init
       run: |
@@ -104,6 +122,20 @@ jobs:
     # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan
       run: |
-        terragrunt run-all plan --terragrunt-non-interactive
+        terragrunt run-all plan -out=output--terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
+
+    # Generates an execution plan for Terragrunt
+    - name: Terragrunt Plan Out
+      run: |
+        terragrunt show -no-color -json output > output.json --terragrunt-non-interactive
+      continue-on-error: true
+      working-directory: ${{ inputs.working_directory }}
+
+    # Generates an execution plan for Terragrunt
+    - name: OPA Analisys
+      run: |
+        opa eval --format pretty --data .opa-policies/${{ inputs.opa_policy }} -i ${{ inputs.working_directory }}/output.json data.terraform.deny
+      continue-on-error: true
+
