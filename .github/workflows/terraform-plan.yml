@@ -136,6 +136,12 @@ jobs:
     # Generates an execution plan for Terragrunt
     - name: OPA Analisys
       run: |
+        cat ${{ inputs.working_directory }}/output.json 
+      continue-on-error: true
+
+    # Generates an execution plan for Terragrunt
+    - name: OPA Analisys
+      run: |
         opa eval --format pretty --data .opa-policies/${{ inputs.opa_policy }} -i ${{ inputs.working_directory }}/output.json data.terraform.deny
       continue-on-error: true
 
