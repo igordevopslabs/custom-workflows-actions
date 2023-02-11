@@ -1,0 +1,92 @@
+name: 'Terragrunt CI'
+
+on:
+  workflow_call:
+
+    inputs:
+      working_directory:
+        description: "The working directory of execution."
+        type: string
+        required: true
+
+      terraform_version:
+        description: "The terraform version."
+        type: string
+        required: false
+        default: "1.2.9"
+
+      terragrunt_version:
+        description: "The terragrunt version."
+        type: string
+        required: false
+        default: "0.39.2"
+
+jobs:
+  Terragrunt:
+    name: 'Terragrunt'
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install AWS CLI
+      uses: unfor19/install-aws-cli-action@v1.0.4
+      with:
+        version: 2     
+        verbose: false
+
+    - name: Configure AWS Credentials
+      shell: bash
+      run: |
+        cat <<EOF >$HOME/.aws/credentials
+        [demo]
+        aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_access_key = ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+        EOF
+
+    - name: Configure AWS Credentials
+      shell: bash
+      run: |
+        cat <<EOF >$HOME/.aws/config
+        [demo]
+        region = us-east-1
+        output = json
+        EOF
+
+    # Install the latest version of Terragrunt CLI and configure the Terragrunt CLI configuration file with a Terragrunt Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-Terraform@v1
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+        terraform_wrapper: true
+    - name: Setup Terraform version
+      run: terraform --version
+    - name: Setup Terraform wrapper path
+      run: which terraform
+
+    - name: Setup Terragrunt
+      run: |
+        sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ inputs.terragrunt_version }}/terragrunt_linux_amd64"
+        sudo chmod +x /bin/terragrunt
+        terragrunt -v
+
+    # Initialize a new or existing Terragrunt working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terragrunt Init
+      run: |
+        terragrunt init --terragrunt-non-interactive
+      continue-on-error: true
+      working-directory: ${{ inputs.working_directory }}
+
+    # Generates an execution plan for Terragrunt
+    - name: Terragrunt Plan
+      run: |
+        terragrunt run-all plan --terragrunt-non-interactive
+      continue-on-error: true
+      working-directory: ${{ inputs.working_directory }}
