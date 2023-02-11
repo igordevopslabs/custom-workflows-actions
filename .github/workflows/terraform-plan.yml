@@ -122,7 +122,7 @@ jobs:
     # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan
       run: |
-        terragrunt run-all plan -out=output--terragrunt-non-interactive
+        terragrunt run-all plan -out=output --terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
