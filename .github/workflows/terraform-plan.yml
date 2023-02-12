@@ -138,5 +138,5 @@ jobs:
     # Generates an execution plan for Terragrunt
     - name: OPA Analisys
       run: |
-        cat ${{ inputs.working_directory }}/tfplan.json | opa eval data.terraform.deny --data .opa-policies/${{ inputs.opa_policy }} -I -f raw
+        cat ${{ inputs.working_directory }}/tfplan.json | opa eval data.terraform.deny --data .opa-policies/${{ inputs.opa_policy }} -I -f raw | jq .
       continue-on-error: true
