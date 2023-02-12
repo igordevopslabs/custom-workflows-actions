@@ -127,7 +127,7 @@ jobs:
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
-    - name: Test policies
+    - name: Debug OPA
       run: cat ${{ inputs.working_directory }}/tfplan.json | opa eval -I -f pretty input
 
     # Generates an execution plan for Terragrunt
