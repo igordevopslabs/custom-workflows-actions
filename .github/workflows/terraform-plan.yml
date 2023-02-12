@@ -141,5 +141,5 @@ jobs:
     # Generates an execution plan for Terragrunt
     - name: OPA Analisys
       run: |
-        opa eval --bundle .opa-policies/ --format json --input ${{ inputs.working_directory }}/tfplan.json --fail-defined 'data.terraform.deny[message]'
+        opa eval --bundle .opa-policies/ --format values --input ${{ inputs.working_directory }}/tfplan.json --fail-defined 'data.terraform.deny[message]'
       continue-on-error: true
