@@ -128,7 +128,7 @@ jobs:
       working-directory: ${{ inputs.working_directory }}
 
     - name: Test policies
-      run: opa test .opa-policies/
+      run: cat ${{ inputs.working_directory }}/tfplan.json | opa eval -I -f pretty input
 
     # Generates an execution plan for Terragrunt
     - name: OPA Analisys
