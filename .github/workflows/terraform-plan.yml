@@ -130,6 +130,9 @@ jobs:
     - name: Debug OPA
       run: cat ${{ inputs.working_directory }}/tfplan.json | opa eval -I -f pretty input
 
+    - name: Debug json
+      run: cat ${{ inputs.working_directory }}/tfplan.json 
+
     # Generates an execution plan for Terragrunt
     - name: OPA Analisys
       run: |
