@@ -1,4 +1,4 @@
-name: 'Terragrunt CI'
+name: 'OPA Analysis'
 
 on:
   workflow_call:
@@ -34,7 +34,7 @@ on:
         default: "tags.rego"
 
 jobs:
-  Terragrunt:
+  opa-analysis:
     name: 'Terragrunt'
     runs-on: ubuntu-22.04
 
@@ -90,8 +90,10 @@ jobs:
       with:
         terraform_version: ${{ inputs.terraform_version }}
         terraform_wrapper: true
+    
     - name: Setup Terraform version
       run: terraform --version
+
     - name: Setup Terraform wrapper path
       run: which terraform
 
@@ -102,46 +104,89 @@ jobs:
         terragrunt -v
 
     - name: Download OPA
+      id: get-opa
       uses: open-policy-agent/setup-opa@v2
       with:
         version: edge
 
-    # Initialize a new or existing Terragrunt working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terragrunt Init
+    - name: Terraform Init
+      id: init
       run: |
-        terragrunt init --terragrunt-non-interactive
+        terragrunt init --upgrade
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
-    # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan
+      id: plan
       run: |
         terragrunt run-all plan -out=tfplan.binary --terragrunt-non-interactive
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
-    # Generates an execution plan for Terragrunt
     - name: Terragrunt Plan Out
+      id: plan-out
       run: |
         terragrunt show -no-color -json tfplan.binary > tfplan.json
       continue-on-error: true
       working-directory: ${{ inputs.working_directory }}
 
-    - name: Debug OPA
-      run: cat ${{ inputs.working_directory }}/tfplan.json | opa eval -I -f pretty input
-
-    - name: Debug json
-      run: cat ${{ inputs.working_directory }}/tfplan.json 
-
-    # Generates an execution plan for Terragrunt
-    - name: OPA Analisys
+    - name: OPA Analysis
+      env:
+        WORKING_DIR: ${{ inputs.working_directory }}
+        OPA_POLICY_PATH: ${{ inputs.opa_policy }}
+      id: opa-scan
       run: |
-        opa eval --format json --data .opa-policies/${{ inputs.opa_policy }} -i ${{ inputs.working_directory }}/tfplan.json --package terraform data.terraform.deny
+        set -o pipefail
+        TEMP_FILE=$(mktemp)
+        opa eval --format json --data .opa-policies/$OPA_POLICY_PATH -i $WORKING_DIR/tfplan.json --package terraform data.terraform.deny | jq '.result[].expressions[].value[]' | tee $TEMP_FILE
+        echo "Counting $TEMP_FILE bytes"
+        BYTE_COUNT=$(wc -c < $TEMP_FILE)
+        echo "Bytes: $BYTE_COUNT"
+        echo "------------------------------------------------------------------------"
+        echo "Byte limit for Github Pull Request comment: 50000"
+        if (( $BYTE_COUNT < 50000 )); then
+          echo "logs=$(cat $TEMP_FILE | base64 | tr -d '\n')" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        echo "Skipping Pull Request OPA Scan comment"
+        RESULT="*OPA external deps scan is over character threshold, please check https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo "logs=$(echo $RESULT | base64 | tr -d '\n')" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Update Pull Request with Non Compliant OPA report
+      id: comment-pr
+      if: steps.opa-scan.outputs.logs != ''
+      uses: actions/github-script@v6
+      env:
+        OPA_RESULT_BASE64: ${{ steps.opa-scan.outputs.logs }}
+      with:
+        result-encoding: string
+        script: |
+          const prCommentOPA= async ({github, context}) => {
+            const base64String = process.env.OPA_RESULT_BASE64 || "Cg=="
+            const buff = Buffer.from(base64String, 'base64')
+            const OPAResultFormatted = buff.toString('utf-8')
+            
+            const prOutput = `
+          <summary><strong>:x: :radioactive: :x: STOP!! You have resource(s) not compliant with mandatory tags policy, please fix them before merge. :x: :radioactive: :x: </strong></summary>
+
+          \`\`\`bash\n
+          #Mandatory Tags Report:\n
+          ${OPAResultFormatted}
+          \`\`\`
+
+          `;
+
+            github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: prOutput
+            }); 
+          }
+          await prCommentOPA({github, context, core})
       continue-on-error: true
 
 
-    # Generates an execution plan for Terragrunt
-    - name: OPA Analisys
-      run: |
-        opa eval --bundle .opa-policies/ --format values --input ${{ inputs.working_directory }}/tfplan.json --fail-defined 'data.terraform.deny[message]'
-      continue-on-error: true
+
+
