@@ -212,10 +212,10 @@ jobs:
               const numIssues = (CtResultFormatted.match(/\n/g) || []).length;  
 
               const prOutput = `
-            ### :large_orange_diamond: :warning: :large_orange_diamond: ATENÇÃO! Foram identificadas divergências em relação às regras de guardrails em ${{ matrix.environment }}. :large_orange_diamond: :warning: :large_orange_diamond:
+            ### :warning: ATENÇÃO! Foram identificadas infrações em relação às regras do conftest nos valores de ${{ matrix.environment }}. :warning:
 
             <br>
-            Total de divergências: ${numIssues}
+            Total de infrações: ${numIssues}
             <br><br>
 
             > ${CtResultFormatted}
