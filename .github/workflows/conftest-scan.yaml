@@ -1,0 +1,243 @@
+name: iac-conftest-scan
+
+on:
+  workflow_call:
+
+    inputs:
+      helmfile_dir:
+        description: "Path to the helmfile.yaml directory"
+        type: string
+        required: false
+        default: "deploy/helmfile.yaml"
+      environments:
+        description: "List of environments to iac-validator perform scan"
+        type: string
+        required: true
+      helmfile_version:
+        description: "Version of helmfile"
+        type: string
+        required: false
+        default: 'v0.143.5'
+      helm_diff_version:
+        description: "Version of helmfile"
+        type: string
+        required: false
+        default: 'v3.6.0'
+      helm_git_version:
+        description: "Version of helmfile"
+        type: string
+        required: false
+        default: '0.10.0'
+      conftest_package:
+        description: "Package of conftest rule"
+        type: string
+        required: false
+        default: 'kubernetes'
+      conftest_version:
+        description: "Version of conftest"
+        type: string
+        required: false
+        default: '0.39.2'
+                
+env:
+  SSH_KEY: ${{ secrets.SSH_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+jobs:
+  conftest-scanning:
+    name: K8s Scanning Validator
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on:
+      - ubuntu-latest
+    outputs:
+      warning: ${{ steps.conftest-scan.outputs.warning }}
+      failure: ${{ steps.conftest-scan.outputs.failure }}
+    strategy: 
+      matrix: 
+       environment: ${{ fromJson(inputs.environments) }}  
+    steps:
+      - name: Checkout Application Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: "0"
+
+      - name: Check if helmfile file exists
+        id: file_check
+        run: |
+          if [ -f "deploy/helmfile.yaml" ]; then
+            echo "helmfile=true" >> $GITHUB_OUTPUT
+          else
+            echo "helmfile=false" >> $GITHUB_OUTPUT
+          fi          
+        shell: bash
+        
+      - name: Set SSH key
+        if: steps.file_check.outputs.helmfile == 'true'
+        id: ssh-setup
+        shell: bash
+        env:
+          SSH_KEY: ${{secrets.SSH_KEY}}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          SSH_PATH="$HOME/.ssh"
+
+          touch "$SSH_PATH/known_hosts"
+          echo "$SSH_KEY" > "$SSH_PATH/id_rsa"
+        
+          chmod 700 "$SSH_PATH"
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          chmod 600 "$SSH_PATH/known_hosts"
+          chmod 600 "$SSH_PATH/id_rsa"
+        
+          eval "$(ssh-agent -s)"
+          ssh-add "$SSH_PATH/id_rsa"
+          
+          echo $SSH_AUTH_SOCK
+          echo "ssh-socket=$SSH_AUTH_SOCK" >> $GITHUB_OUTPUT
+      
+      - name: Install Helm
+        if: steps.file_check.outputs.helmfile == 'true'
+        shell: bash
+        run: |  
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+      
+      - name: Install Helm Plugins
+        if: steps.file_check.outputs.helmfile == 'true'
+        shell: bash
+        run: |
+          helm plugin install https://github.com/databus23/helm-diff --version ${{ inputs.helm_diff_version }}
+          helm plugin install https://github.com/aslafy-z/helm-git --version ${{ inputs.helm_git_version }}
+      
+      - name: Install Helmfile
+        if: steps.file_check.outputs.helmfile == 'true'
+        shell: bash
+        run: |  
+          wget https://github.com/roboll/helmfile/releases/download/${{  inputs.helmfile_version }}/helmfile_linux_386
+          chmod +x helmfile_linux_386
+          sudo mv helmfile_linux_386 /usr/local/bin/helmfile
+
+      - name: Setup conftest
+        if: steps.file_check.outputs.helmfile == 'true'
+        run: |
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v${{ inputs.conftest_version }}/conftest_${{ inputs.conftest_version }}_Linux_x86_64.tar.gz"
+          tar xzf conftest_${{ inputs.conftest_version }}_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin
+
+      - name: Checkout guardrails repo
+        if: steps.file_check.outputs.helmfile == 'true'
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          repository: igordevopslabs/conftest-policies
+          path: policies
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup version file
+        if: steps.file_check.outputs.helmfile == 'true'
+        run: |
+          echo "version: \"main\"" > deploy/values/version.yaml
+
+      - name: Generate k8s manifest file
+        if: steps.file_check.outputs.helmfile == 'true'
+        id: manifest
+        run: helmfile -e ${{ matrix.environment }} -f ${{ inputs.helmfile_dir }} template > ${{ matrix.environment }}-template.yaml
+      
+      - name: View template file
+        if: steps.file_check.outputs.helmfile == 'true'
+        run: |
+          cat ${{ matrix.environment }}-template.yaml
+          
+      - name: Run Conftest
+        if: steps.file_check.outputs.helmfile == 'true'
+        id: conftest-scan
+        shell: bash
+        run: |
+          set -o pipefail
+          TEMP_FILE=$(mktemp)
+          conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n ${{ inputs.conftest_package }} -o json --no-color | jq -r '.[] | ((.warnings[]?.msg // []), (.failures[]?.msg // []) | select(. != null))' | tr -d '[]"' | sed '/^\s*$/d' | tee $TEMP_FILE
+          CONFTEST_FAILURES="$(conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n ${{ inputs.conftest_package }} -o json | jq -r '.[0].failures')"
+          CONFTEST_WARNINGS="$(conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n ${{ inputs.conftest_package }} -o json | jq -r '.[0].warnings')"
+
+          echo $CONFTEST_FAILURES
+          echo $CONFTEST_WARNINGS
+
+          if [ "$CONFTEST_FAILURES" == "null" ] && [ "$CONFTEST_WARNINGS" == "null" ]
+          then 
+            echo "logs=" >> $GITHUB_OUTPUT
+            exit 0
+          fi  
+          
+          if [ "$CONFTEST_FAILURES" != "null" ]
+          then 
+            echo "failure=true" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "$CONFTEST_WARNINGS" != "null" ]
+          then
+            echo "warning=true" >> $GITHUB_OUTPUT  
+          fi
+
+          echo "Counting $TEMP_FILE bytes"
+          BYTE_COUNT=$(wc -c < $TEMP_FILE)
+          echo "Bytes: $BYTE_COUNT"
+          echo "------------------------------------------------------------------------"
+          echo "Byte limit for Github Pull Request comment: 50000"
+          if (( $BYTE_COUNT < 50000 )); then
+            echo "logs=$(cat $TEMP_FILE | base64 | tr -d '\n')" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+            
+          echo "Skipping Pull Request Conftest comment"
+          RESULT="*Conftest scan is over character threshold, please check https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "logs=$(echo $RESULT | base64 | tr -d '\n')" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Update Pull Request with Results
+        id: update-pr
+        if: steps.conftest-scan.outputs.logs != '' && steps.file_check.outputs.helmfile == 'true'
+        uses: actions/github-script@v6
+        env:
+          CT_RESULT_BASE64: ${{ steps.conftest-scan.outputs.logs }}
+          RUN_ID: ${{ github.run_id }}
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          result-encoding: string
+          script: |
+            const prCommentCt = async ({github, context}) => {
+              const base64String = process.env.CT_RESULT_BASE64 || "Cg=="
+              const buff = Buffer.from(base64String, 'base64')
+              const CtResultFormatted = buff.toString('utf-8')
+              const numIssues = (CtResultFormatted.match(/\n/g) || []).length;  
+
+              const prOutput = `
+            ### :large_orange_diamond: :warning: :large_orange_diamond: ATENÇÃO! Foram identificadas divergências em relação às regras de guardrails em ${{ matrix.environment }}. :large_orange_diamond: :warning: :large_orange_diamond:
+
+            <br>
+            Total de divergências: ${numIssues}
+            <br><br>
+
+            > ${CtResultFormatted}
+            
+
+            <br>
+            
+            ***:book: <a href=https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.RUN_ID}>Clique aqui para mais detalhes do job</a>***
+            
+            <br>`;
+
+              github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: prOutput
+              }); 
+            }
+            await prCommentCt({github, context, core})
+        continue-on-error: true
+
+      - name: Conftest failure
+        if: steps.conftest-scan.outputs.failure == 'true' && steps.file_check.outputs.helmfile == 'true'
+        run: |
+          exit 1
