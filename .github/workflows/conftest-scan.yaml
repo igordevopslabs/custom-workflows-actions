@@ -40,7 +40,7 @@ on:
         default: '0.39.2'
                 
 env:
-  SSH_KEY: ${{ secrets.SSH_KEY }}
+  LAB_SSH_KEY: ${{ secrets.LAB_SSH_KEY }}
   GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
 jobs:
@@ -76,13 +76,13 @@ jobs:
         id: ssh-setup
         shell: bash
         env:
-          SSH_KEY: ${{secrets.SSH_KEY}}
+          LAB_SSH_KEY: ${{secrets.LAB_SSH_KEY}}
         run: |
           mkdir -p "$HOME/.ssh"
           SSH_PATH="$HOME/.ssh"
 
           touch "$SSH_PATH/known_hosts"
-          echo "$SSH_KEY" > "$SSH_PATH/id_rsa"
+          echo "$LAB_SSH_KEY" > "$SSH_PATH/id_rsa"
         
           chmod 700 "$SSH_PATH"
           ssh-keyscan github.com >> ~/.ssh/known_hosts
