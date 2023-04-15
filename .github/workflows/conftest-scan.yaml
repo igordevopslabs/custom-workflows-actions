@@ -19,7 +19,7 @@ on:
         description: "List of environments to iac-validator perform scan"
         type: string
         required: false
-        default: '["homolog","sandbox","production"]'
+        default: '{environment: ["homolog","sandbox","production"]}'
       helmfile_version:
         description: "Version of helmfile"
         type: string
@@ -61,7 +61,7 @@ jobs:
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-       environment: ${{ inputs.environments && fromJson(inputs.environments) }}
+       environment: ${{ fromJson(inputs.environments) }}
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
