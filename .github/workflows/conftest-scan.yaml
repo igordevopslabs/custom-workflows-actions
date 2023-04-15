@@ -18,7 +18,8 @@ on:
       environments:
         description: "List of environments to iac-validator perform scan"
         type: string
-        required: true
+        required: false
+        default: '["homolog","sandbox","production"]'
       helmfile_version:
         description: "Version of helmfile"
         type: string
