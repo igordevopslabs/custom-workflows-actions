@@ -61,7 +61,7 @@ jobs:
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-        environment: ${{ fromJson(format('{0}', inputs.environments)) }}
+        environment: ${{ fromJson('["homolog","sandbox","production"]') }}
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
