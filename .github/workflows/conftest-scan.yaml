@@ -51,6 +51,41 @@ env:
   GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
 jobs:
+  discovery_environment:
+    name: Discovery helmifle environments
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    runs-on:
+        - ubuntu-latest
+    steps:
+      - name: Checkout Application Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: "0"
+
+      - name: Check if helmfile file exists
+        id: file_check
+        run: |
+            if [ -f "deploy/helmfile.yaml" ]; then
+                echo "helmfile=true" >> $GITHUB_OUTPUT
+            else
+                echo "helmfile=false" >> $GITHUB_OUTPUT
+            fi          
+        shell: bash
+
+      - name: Get environments
+        if: steps.file_check.outputs.helmfile == 'true'
+        id: get-env
+        shell: bash
+        run: |
+          cat deploy/helmfile.yaml | grep -A1000 "^environments:" > ENVIRONMENTS.yaml
+          yq -o=j -I=0 '.environments' ENVIRONMENTS.yaml > file.json
+          jq -r 'keys | map(.)' arquivo.json
+          echo "envs=$(jq -r 'keys | map(.)' arquivo.json)" >> $GITHUB_OUTPUT
+
+      - name: Show envs
+        run: echo ${{ steps.get-env.outputs.envs }}
+
+
   conftest-scanning:
     name: K8s Scanning Validator
     if: ${{ github.actor != 'dependabot[bot]' }}
