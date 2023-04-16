@@ -61,7 +61,7 @@ jobs:
     steps:
       
       - name: view branch
-        run: echo $GITHUB_BASE_REF
+        run: echo $GITHUB_HEAD_REF
         
       - name: Checkout Application Repository
         uses: actions/checkout@v3
