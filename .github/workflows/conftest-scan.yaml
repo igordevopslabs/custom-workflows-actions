@@ -109,13 +109,22 @@ jobs:
           ENVS=$(cat output.json)
 
           FORMATTED_VALUE=$(echo $ENVS | sed 's/ //g')
-          echo $FORMATTED_VALUE
+          echo $FORMATTED_VALUE >> $GITHUB_ENV
           
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
 
+      - name: matrix values exist
+        if: steps.file_check.outputs.helmfile == 'false'
+        id: values
+        shell: bash
+        run: | 
+              echo "Matrix is empty"
+              echo "matrix_values=empty" >> $GITHUB_OUTPUT
+
+
   conftest-scanning:
     name: K8s Scanning Validator
-    if: ${{ github.actor != 'dependabot[bot]' }} && needs.discovery_environment.outputs.helmfile == true
+    if: ${{ github.actor != 'dependabot[bot]' }} && ${{ needs.discovery_environment.outputs.envs != '' }}
     runs-on:
       - ubuntu-latest
     needs: [discovery_environment]
@@ -123,11 +132,9 @@ jobs:
       warning: ${{ steps.conftest-scan.outputs.warning }}
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
+      fail-fast: false  
       matrix: 
         environment: ${{ fromJSON(needs.discovery_environment.outputs.envs) }}
-        include:
-          - if: contains('', needs.discovery_environment.outputs.envs)
-            environment: empty
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
