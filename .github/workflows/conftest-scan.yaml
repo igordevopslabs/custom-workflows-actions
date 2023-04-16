@@ -216,9 +216,9 @@ jobs:
         run: |
           set -o pipefail
           TEMP_FILE=$(mktemp)
-          conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n ${{ inputs.conftest_package }} -o json --no-color | jq -r '.[] | ((.warnings[]?.msg // []), (.failures[]?.msg // []) | select(. != null))' | tr -d '[]"' | sed '/^\s*$/d' | tee $TEMP_FILE
-          CONFTEST_FAILURES="$(conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n ${{ inputs.conftest_package }} -o json | jq -r '.[0].failures')"
-          CONFTEST_WARNINGS="$(conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n ${{ inputs.conftest_package }} -o json | jq -r '.[0].warnings')"
+          conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n kubernetes -o json --no-color | jq -r '.[] | ((.warnings[]?.msg // []), (.failures[]?.msg // []) | select(. != null))' | tr -d '[]"' | sed '/^\s*$/d' | tee $TEMP_FILE
+          CONFTEST_FAILURES="$(conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n kubernetes -o json | jq -r '.[0].failures')"
+          CONFTEST_WARNINGS="$(conftest test ${{ matrix.environment }}-template.yaml --policy policies/ --no-fail -n kubernetes -o json | jq -r '.[0].warnings')"
 
           echo $CONFTEST_FAILURES
           echo $CONFTEST_WARNINGS
