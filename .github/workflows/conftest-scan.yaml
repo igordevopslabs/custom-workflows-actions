@@ -85,6 +85,9 @@ jobs:
             fi          
         shell: bash
 
+      - name: Check value
+        run: echo ${{ steps.file_check.outputs.helmfile }}
+
       - name: Download yq
         if: steps.file_check.outputs.helmfile == 'true'
         id: yq
