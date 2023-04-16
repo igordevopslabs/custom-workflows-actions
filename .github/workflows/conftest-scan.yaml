@@ -59,11 +59,19 @@ jobs:
     outputs:
       envs: ${{ steps.get-env.outputs.envs }}
     steps:
+      
+      - name: view branch
+        id: branch
+        run: |
+          echo $GITHUB_HEAD_REF
+          BRANCH=$(echo $GITHUB_HEAD_REF)
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+        
       - name: Checkout Application Repository
         uses: actions/checkout@v3
         with:
           fetch-depth: "0"
-          ref: $GITHUB_HEAD_REF
+          ref: ${{ steps.branch.outputs.branch }}
 
       - name: Check if helmfile file exists
         id: file_check
