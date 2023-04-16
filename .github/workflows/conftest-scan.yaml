@@ -57,7 +57,7 @@ jobs:
     runs-on:
         - ubuntu-latest
     outputs:
-      warning: ${{ steps.get-env.outputs.envs }}
+      envs: ${{ steps.get-env.outputs.envs }}
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
