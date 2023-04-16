@@ -113,7 +113,7 @@ jobs:
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-        environment: ${{ needs.get-env.outputs.envs }}
+        environment: [homolog,production,sandbox]
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
