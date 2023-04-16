@@ -59,17 +59,10 @@ jobs:
     outputs:
       envs: ${{ steps.get-env.outputs.envs }}
     steps:
-      - name: Obter nome da branch
-        run: |
-          BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f3)
-          echo $BRANCH_NAME
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-
       - name: Checkout Application Repository
         uses: actions/checkout@v3
         with:
           fetch-depth: "0"
-          ref: $BRANCH_NAME
 
       - name: Check if helmfile file exists
         id: file_check
