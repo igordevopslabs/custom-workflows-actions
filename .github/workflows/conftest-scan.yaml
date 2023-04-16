@@ -82,7 +82,14 @@ jobs:
             if [ -f "deploy/helmfile.yaml" ]; then
                 echo "helmfile=true" >> $GITHUB_OUTPUT
             else
-                echo "helmfile=false" >> $GITHUB_OUTPUT
+                mdkir deploy
+                cat >deploy/helmfile.yaml <<EOL
+                environments:
+                    null:
+                      values:
+                        - null
+                EOL
+                echo "helmfile=fake" >> $GITHUB_OUTPUT
             fi          
         shell: bash
 
@@ -90,7 +97,6 @@ jobs:
         run: echo ${{ steps.file_check.outputs.helmfile }}
 
       - name: Download yq
-        if: steps.file_check.outputs.helmfile == 'true'
         id: yq
         run: |
             wget https://github.com/mikefarah/yq/releases/download/v4.33.3/yq_linux_386
@@ -113,15 +119,6 @@ jobs:
           echo $FORMATTED_VALUE >> $GITHUB_ENV
           
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
-
-      - name: Set empty
-        if: steps.file_check.outputs.helmfile == 'false'
-        id: empty
-        shell: bash
-        run: |
-          ENV_VALUE=empty
-          echo $ENV_VALUE
-          echo "empty=$ENV_VALUE" >> $GITHUB_OUTPUT
 
           
 
