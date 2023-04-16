@@ -90,7 +90,7 @@ jobs:
           cat output.json
 
           ENVS=$(cat output.json)
-          echo "envs=$ENVS" >> $GITHUB_OUTPUT
+          echo $ENVS
 
       - name: Show envs
         run: echo ${{ steps.get-env.outputs.envs }}
