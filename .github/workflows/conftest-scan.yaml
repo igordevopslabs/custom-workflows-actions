@@ -174,15 +174,15 @@ jobs:
         if: steps.file_check.outputs.helmfile == 'true'
         shell: bash
         run: |  
-          wget https://github.com/roboll/helmfile/releases/download/${{  inputs.helmfile_version }}/helmfile_linux_386
+          wget https://github.com/roboll/helmfile/releases/download/v0.143.5/helmfile_linux_386
           chmod +x helmfile_linux_386
           sudo mv helmfile_linux_386 /usr/local/bin/helmfile
 
       - name: Setup conftest
         if: steps.file_check.outputs.helmfile == 'true'
         run: |
-          wget "https://github.com/open-policy-agent/conftest/releases/download/v${{ inputs.conftest_version }}/conftest_${{ inputs.conftest_version }}_Linux_x86_64.tar.gz"
-          tar xzf conftest_${{ inputs.conftest_version }}_Linux_x86_64.tar.gz
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v0.39.2/conftest_0.39.2_Linux_x86_64.tar.gz"
+          tar xzf conftest_0.39.2_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin
 
       - name: Checkout guardrails repo
