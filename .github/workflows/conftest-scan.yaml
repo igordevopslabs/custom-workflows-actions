@@ -56,6 +56,8 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on:
         - ubuntu-latest
+    outputs:
+      warning: ${{ steps.get-env.outputs.envs }}
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
@@ -105,16 +107,13 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on:
       - ubuntu-latest
+    needs: [discovery_environment]
     outputs:
       warning: ${{ steps.conftest-scan.outputs.warning }}
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-        environment: [
-            homolog,
-            production,
-            sandbox
-          ]
+        environment: ${{ needs.get-env.outputs.envs }}
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
@@ -272,7 +271,7 @@ jobs:
               const numIssues = (CtResultFormatted.match(/\n/g) || []).length;  
 
               const prOutput = `
-            ### :warning: ATENÇÃO! Foram identificadas infrações em relação às regras do conftest nos valores de ${{ matrix.environment }}. :warning:
+            ### :warning: ATENÇÃO! Foram identificadas infrações do conftest nos valores de ${{ matrix.environment }}. :warning:
 
             <br>
             Total de infrações: ${numIssues}
