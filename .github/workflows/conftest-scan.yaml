@@ -72,6 +72,13 @@ jobs:
             fi          
         shell: bash
 
+      - name: Download yq
+        id: yq
+        run: |
+            wget https://github.com/mikefarah/yq/releases/download/v4.33.3/yq_linux_386
+            chmod +x yq_linux_386
+            sudo mv yq_linux_386 /usr/local/bin/yq
+
       - name: Get environments
         if: steps.file_check.outputs.helmfile == 'true'
         id: get-env
