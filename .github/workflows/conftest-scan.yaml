@@ -118,7 +118,7 @@ jobs:
         id: null-value
         shell: bash
         run: |
-          FORMATTED_VALUE=["null","null"]
+          FORMATTED_VALUE='["null","null"]'
           echo $FORMATTED_VALUE
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
 
