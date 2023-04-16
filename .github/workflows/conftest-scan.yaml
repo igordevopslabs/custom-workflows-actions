@@ -62,6 +62,7 @@ jobs:
       - name: Obter nome da branch
         run: |
           BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f3)
+          echo $BRANCH_NAME
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Checkout Application Repository
