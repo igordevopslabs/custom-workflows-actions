@@ -59,6 +59,10 @@ jobs:
     outputs:
       envs: ${{ steps.get-env.outputs.envs }}
     steps:
+      
+      - name: view branch
+        run: echo $GITHUB_REF
+        
       - name: Checkout Application Repository
         uses: actions/checkout@v3
         with:
