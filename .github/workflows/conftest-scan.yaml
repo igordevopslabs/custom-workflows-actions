@@ -60,7 +60,6 @@ jobs:
       envs: ${{ steps.get-env.outputs.envs }}
       branch: ${{ steps.branch.outputs.branch }}
       helmfile: ${{ steps.file_check.outputs.helmfile }}
-      empty: ${{ steps.empty.outputs.empty }}
     steps:
       
       - name: view branch
@@ -82,14 +81,7 @@ jobs:
             if [ -f "deploy/helmfile.yaml" ]; then
                 echo "helmfile=true" >> $GITHUB_OUTPUT
             else
-              mdkir deploy
-              cat >deploy/helmfile.yaml <<EOL
-              environments:
-                null:
-                  values:
-                    - null
-                EOL
-              echo "helmfile=fake" >> $GITHUB_OUTPUT
+                echo "helmfile=false" >> $GITHUB_OUTPUT
             fi          
         shell: bash
 
@@ -97,6 +89,7 @@ jobs:
         run: echo ${{ steps.file_check.outputs.helmfile }}
 
       - name: Download yq
+        if: steps.file_check.outputs.helmfile == 'true'
         id: yq
         run: |
             wget https://github.com/mikefarah/yq/releases/download/v4.33.3/yq_linux_386
@@ -120,11 +113,18 @@ jobs:
           
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
 
-          
+      - name: matrix values exist
+        if: steps.file_check.outputs.helmfile == 'false'
+        id: values
+        shell: bash
+        run: | 
+              echo "Matrix is empty"
+              echo "matrix_values=empty" >> $GITHUB_OUTPUT
+
 
   conftest-scanning:
     name: K8s Scanning Validator
-    if: ${{ github.actor != 'dependabot[bot]' }} && needs.discovery_environment.outputs.empty != 'empty'
+    if: ${{ github.actor != 'dependabot[bot]' }} && ${{ needs.discovery_environment.outputs.helmfile == true }}
     runs-on:
       - ubuntu-latest
     needs: [discovery_environment]
