@@ -89,7 +89,7 @@ jobs:
           jq -r 'keys | map(.)' file.json > output.json
           cat output.json
 
-          ENVS=$(cat output.json)
+          ENVS=$(cat output.json | sed 's/ //g')
           echo $ENVS
 
       - name: Show envs
