@@ -61,7 +61,7 @@ jobs:
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-        environment: ${{ fromJson('["homolog","sandbox","production"]') }}
+        environment: ["homolog", "sandbox", "production"]
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
@@ -77,7 +77,7 @@ jobs:
             echo "helmfile=false" >> $GITHUB_OUTPUT
           fi          
         shell: bash
-        
+
       - name: Set SSH key
         if: steps.file_check.outputs.helmfile == 'true'
         id: ssh-setup
