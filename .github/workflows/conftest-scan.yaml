@@ -82,14 +82,14 @@ jobs:
             if [ -f "deploy/helmfile.yaml" ]; then
                 echo "helmfile=true" >> $GITHUB_OUTPUT
             else
-                mdkir deploy
-                cat >deploy/helmfile.yaml <<EOL
-                environments:
-                    null:
-                      values:
-                        - null
+              mdkir deploy
+              cat >deploy/helmfile.yaml <<EOL
+              environments:
+                null:
+                  values:
+                    - null
                 EOL
-                echo "helmfile=fake" >> $GITHUB_OUTPUT
+              echo "helmfile=fake" >> $GITHUB_OUTPUT
             fi          
         shell: bash
 
