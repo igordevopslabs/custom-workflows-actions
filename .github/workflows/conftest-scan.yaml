@@ -90,12 +90,11 @@ jobs:
           cat output.json
 
           ENVS=$(cat output.json)
-          echo $ENVS
 
           FORMATTED_VALUE=$(echo $ENVS | sed 's/ //g')
           echo $FORMATTED_VALUE
           
-          #echo "envs=$ENVS" >> $GITHUB_OUTPUT
+          echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
 
       - name: Show envs
         run: echo ${{ steps.get-env.outputs.envs }}
