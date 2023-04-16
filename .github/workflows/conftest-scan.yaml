@@ -61,8 +61,10 @@ jobs:
     steps:
       
       - name: view branch
-        run: echo $GITHUB_REF
-        
+        run: |
+          echo "CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo $CURRENT_BRANCH
+
       - name: Checkout Application Repository
         uses: actions/checkout@v3
         with:
