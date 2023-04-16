@@ -114,7 +114,7 @@ jobs:
           
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
 
-      - name: Get environments
+      - name: Set empty
         if: steps.file_check.outputs.helmfile == 'false'
         id: empty
         shell: bash
