@@ -126,7 +126,7 @@ jobs:
       matrix: 
         environment: ${{ fromJSON(needs.discovery_environment.outputs.envs) }}
         include:
-          - if: contains("", needs.discovery_environment.outputs.envs)
+          - if: contains('', needs.discovery_environment.outputs.envs)
             environment: empty
     steps:
       - name: Checkout Application Repository
