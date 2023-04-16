@@ -58,6 +58,7 @@ jobs:
         - ubuntu-latest
     outputs:
       envs: ${{ steps.get-env.outputs.envs }}
+      branch: ${{ steps.branch.outputs.branch }}
     steps:
       
       - name: view branch
@@ -128,7 +129,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: "0"
-          ref: $GITHUB_HEAD_REF
+          ref: ${{ needs.discovery_environment.outputs.branch }}
 
       - name: Check if helmfile file exists
         id: file_check
