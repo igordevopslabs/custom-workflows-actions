@@ -113,6 +113,12 @@ jobs:
           
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
 
+      - name: Get environments
+        if: steps.file_check.outputs.helmfile == 'false'
+        id: null-value
+        shell: bash
+        run: |
+          echo "envs=[null]" >> $GITHUB_OUTPUT
 
   conftest-scanning:
     name: K8s Scanning Validator
