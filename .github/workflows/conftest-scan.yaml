@@ -116,7 +116,7 @@ jobs:
 
   conftest-scanning:
     name: K8s Scanning Validator
-    if: ${{ github.actor != 'dependabot[bot]' }} && ${{ needs.discovery_environment.outputs.helmfile == true }}
+    if: ${{ github.actor != 'dependabot[bot]' }} && needs.discovery_environment.outputs.helmfile == true
     runs-on:
       - ubuntu-latest
     needs: [discovery_environment]
