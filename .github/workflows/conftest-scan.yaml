@@ -89,9 +89,13 @@ jobs:
           jq -r 'keys | map(.)' file.json > output.json
           cat output.json
 
-          ENVS=$(cat output.json | sed 's/ //g')
+          ENVS=$(cat output.json)
           echo $ENVS
-          echo "envs=$ENVS" >> $GITHUB_OUTPUT
+
+          FORMATTED_VALUE=$(echo $ENVS | sed 's/ //g')
+          echo $FORMATTED_VALUE
+          
+          #echo "envs=$ENVS" >> $GITHUB_OUTPUT
 
       - name: Show envs
         run: echo ${{ steps.get-env.outputs.envs }}
