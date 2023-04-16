@@ -85,6 +85,7 @@ jobs:
         shell: bash
 
       - name: Download yq
+        if: steps.file_check.outputs.helmfile == 'true'
         id: yq
         run: |
             wget https://github.com/mikefarah/yq/releases/download/v4.33.3/yq_linux_386
@@ -107,9 +108,6 @@ jobs:
           echo $FORMATTED_VALUE
           
           echo "envs=$FORMATTED_VALUE" >> $GITHUB_OUTPUT
-
-      - name: Show envs
-        run: echo ${{ steps.get-env.outputs.envs }}
 
 
   conftest-scanning:
