@@ -167,8 +167,8 @@ jobs:
         if: steps.file_check.outputs.helmfile == 'true'
         shell: bash
         run: |
-          helm plugin install https://github.com/databus23/helm-diff --version ${{ inputs.helm_diff_version }}
-          helm plugin install https://github.com/aslafy-z/helm-git --version ${{ inputs.helm_git_version }}
+          helm plugin install https://github.com/databus23/helm-diff --version v3.6.0
+          helm plugin install https://github.com/aslafy-z/helm-git --version 0.10.0
       
       - name: Install Helmfile
         if: steps.file_check.outputs.helmfile == 'true'
