@@ -120,6 +120,7 @@ jobs:
         shell: bash
         run: |
           ENV_VALUE=empty
+          echo $ENV_VALUE
           echo "empty=$ENV_VALUE" >> $GITHUB_OUTPUT
 
           
