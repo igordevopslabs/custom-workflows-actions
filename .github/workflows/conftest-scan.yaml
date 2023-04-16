@@ -86,8 +86,8 @@ jobs:
         run: |
           cat deploy/helmfile.yaml | grep -A1000 "^environments:" > ENVIRONMENTS.yaml
           yq -o=j -I=0 '.environments' ENVIRONMENTS.yaml > file.json
-          jq -r 'keys | map(.)' arquivo.json
-          echo "envs=$(jq -r 'keys | map(.)' arquivo.json)" >> $GITHUB_OUTPUT
+          jq -r 'keys | map(.)' file.json
+          echo "envs=$(jq -r 'keys | map(.)' file.json)" >> $GITHUB_OUTPUT
 
       - name: Show envs
         run: echo ${{ steps.get-env.outputs.envs }}
