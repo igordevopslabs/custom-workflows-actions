@@ -111,9 +111,9 @@ jobs:
     strategy: 
       matrix: 
         environment: [
-            "homolog",
-            "production",
-            "sandbox"
+            homolog,
+            production,
+            sandbox
           ]
     steps:
       - name: Checkout Application Repository
