@@ -115,7 +115,7 @@ jobs:
 
   conftest-scanning:
     name: K8s Scanning Validator
-    if: ${{ github.actor != 'dependabot[bot]' }} && ${{needs.discovery_environment.outputs.helmfile == 'true'}}
+    if: ${{ needs.discovery_environment.outputs.helmfile == 'true'}}
     runs-on:
       - ubuntu-latest
     needs: [discovery_environment]
@@ -128,6 +128,7 @@ jobs:
         environment: [labs]
     steps:
       - name: Checkout Application Repository
+        if: needs.discovery_environment.outputs.helmfile == 'true'
         uses: actions/checkout@v3
         with:
           fetch-depth: "0"
