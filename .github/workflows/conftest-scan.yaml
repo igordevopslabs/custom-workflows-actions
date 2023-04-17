@@ -124,7 +124,8 @@ jobs:
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-        environment: ${{ fromJSON(needs.discovery_environment.outputs.envs) }}
+        #environment: ${{ fromJSON(needs.discovery_environment.outputs.envs) }}
+        environment: [labs]
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3
