@@ -115,7 +115,7 @@ jobs:
 
   conftest-scanning:
     name: K8s Scanning Validator
-    if: ${{ needs.discovery_environment.outputs.helmfile == 'true'}}
+    if: ${{ needs.discovery_environment.outputs.helmfile == 'true' && github.actor != 'dependabot[bot]'}}
     runs-on:
       - ubuntu-latest
     needs: [discovery_environment]
@@ -124,8 +124,7 @@ jobs:
       failure: ${{ steps.conftest-scan.outputs.failure }}
     strategy: 
       matrix: 
-        #environment: ${{ fromJSON(needs.discovery_environment.outputs.envs) }}
-        environment: [labs]
+        environment: ${{ fromJSON(needs.discovery_environment.outputs.envs) }}
     steps:
       - name: Checkout Application Repository
         if: needs.discovery_environment.outputs.helmfile == 'true'
