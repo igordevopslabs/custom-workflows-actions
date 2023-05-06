@@ -19,7 +19,7 @@ on:
 jobs:
   container-vulnerability-scan:
     name: helmchart-validate
-    runs-on: ubuntu-20-04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Application Repository
         uses: actions/checkout@v3  
