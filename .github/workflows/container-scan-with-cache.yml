@@ -85,7 +85,7 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: ${{ inputs.build-args }}
           labels: |
-            igordevopslabs.banking.vcs-ref=${{ steps.vars.outputs.sha_short }}
+            igordevopslabs.demo-ref=${{ steps.vars.outputs.sha_short }}
       - name: Setup trivy bin 
         shell: bash
         run: |  
