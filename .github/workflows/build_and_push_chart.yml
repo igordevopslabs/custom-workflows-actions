@@ -1,0 +1,80 @@
+name: Build and push charts to ECR
+
+on:
+  workflow_call:
+    inputs:
+      CHART_NAME:
+        description: The name of the packaged chart and sent to ECR
+        required: true
+        type: string
+      RUNS_ON:
+        description: Choose runner type
+        required: false
+        type: string
+        default: ubuntu-latest
+      ENVIRONMENT:
+        description: enviroment
+        required: false
+        type: string
+        default: "labs"
+
+    secrets:
+      AWS_ECR_ACCESS_KEY_ID:
+        description: AWS access key id
+        required: true
+      AWS_ECR_SECRET_ACCESS_KEY:
+        description: AWS secrets access key
+        required: true
+      AWS_ECR_ACCOUNT_ID:
+        description: AWS ECR account id
+        required: true
+      AWS_REGION:
+        description: AWS region
+        required: true
+
+jobs:
+  Build_and_deploy:
+    runs-on: ${{ inputs.RUNS_ON }}
+    environment: ${{ inputs.ENVIRONMENT }}
+    steps:
+      - name: Checkout and set Output
+        id: checkout_code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        id: login_aws_credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          mask-aws-account-id: 'no'
+
+      - name: Login to Registry
+        id: login_registry
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
+        run: |
+          aws ecr get-login-password \
+          --region "$AWS_REGION" | helm registry login \
+          --username AWS \
+          --password-stdin "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+      - name: Package and push chart
+        id: package_push
+        env:
+          HELM_EXPERIMENTAL_OCI: 1
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
+          CHART_NAME: ${{ inputs.CHART_NAME }}
+        run: |
+          CHART_PATH=$(helm package "$CHART_NAME")
+          PATH_ARRAY=(${CHART_PATH//\// })
+          CURRENT_CHART_NAME=${PATH_ARRAY[${#PATH_ARRAY[@]} - 1]}
+          echo "Chart $CURRENT_CHART_NAME packaged"
+          echo "Pushing chart"
+          REGISTRY_URL=$(echo "oci://$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/")
+          helm push "$CURRENT_CHART_NAME" "$REGISTRY_URL"
+          echo "Successfully pushed chart $CURRENT_CHART_NAME"
+          exit 0
