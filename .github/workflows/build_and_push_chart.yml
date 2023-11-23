@@ -61,8 +61,8 @@ jobs:
           --username AWS \
           --password-stdin "$AWS_ECR_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
-      - name: Package and push chart
-        id: package_push
+      - name: Build Deps
+        id: helm_deps
         env:
           HELM_EXPERIMENTAL_OCI: 1
           AWS_REGION: ${{ secrets.AWS_REGION }}
