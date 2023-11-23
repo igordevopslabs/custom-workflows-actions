@@ -68,7 +68,7 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
           CHART_NAME: ${{ inputs.CHART_NAME }}
-        workdir: api-charts
+        working-directory: api-charts
         run: |
           helm dependency build
 
