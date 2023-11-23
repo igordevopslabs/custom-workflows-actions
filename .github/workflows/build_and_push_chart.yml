@@ -69,6 +69,16 @@ jobs:
           AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
           CHART_NAME: ${{ inputs.CHART_NAME }}
         run: |
+          helm dependency build
+
+      - name: Package and push chart
+        id: package_push
+        env:
+          HELM_EXPERIMENTAL_OCI: 1
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
+          CHART_NAME: ${{ inputs.CHART_NAME }}
+        run: |
           CHART_PATH=$(helm package "$CHART_NAME")
           PATH_ARRAY=(${CHART_PATH//\// })
           CURRENT_CHART_NAME=${PATH_ARRAY[${#PATH_ARRAY[@]} - 1]}
